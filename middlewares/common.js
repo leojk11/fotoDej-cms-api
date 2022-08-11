@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-require('dontenv/connfig');
+require('dotenv').config();
 
 const { errorCodes } = require('../helpers/errorCodes');
 const { errorMessages } = require('../helpers/errorMessages');
@@ -22,4 +22,15 @@ exports.parseJwt = (token) => {
     const base64Payload = token.split('.')[1];
     const payload = Buffer.from(base64Payload, 'base64');
     return JSON.parse(payload.toString());
+}
+
+exports.errorHandler = (err, req, res, next) => {
+    const errorObj = {
+        status: err.status,
+        error: {
+            message: err.message
+        }
+    };
+
+    res.status(500).json(errorObj);
 }

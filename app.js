@@ -6,6 +6,7 @@ const fileUpload = require('express-fileupload');
 require('dotenv').config();
 
 const mainRouter = require('./main-router/main-router');
+const { errorHandler } = require('./middlewares/common');
 
 const mongo = require('./db/mongo');
 const connectToMongoDb = async() => {
@@ -37,8 +38,9 @@ app.use(
     fileUpload(),
     bodyParser.urlencoded({ extended: false }),
     bodyParser.json(),
-    mainRouter
-)
+    mainRouter,
+    errorHandler
+);
 
 // connect app to db and start it 
 connectToMongoDb();
