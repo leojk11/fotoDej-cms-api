@@ -56,4 +56,47 @@ exports.adminLogin = (req, res) => {
 
 exports.userLogin = (req, res) => {
     const data = { ...req.body };
+
+    if(data.email === '' || !data.email) {
+        res.status(statusCodes.user_error).json({
+            mesasge: errorMessages.please_enter('email')
+        });
+    } else if(data.password === '' || !data.password) {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.please_enter('password')
+        });
+    } else {
+        User.find({ email: data.email })
+            .then(users => {
+                if(users.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: `User with email ${ data.email } does not exist.`
+                    });
+                } else {
+                    if(bcrypt.compareSync(data.password, users[0].password)) {
+                        const token = jwt.sign(
+                            { ...users[0] }, 
+                            process.env.SECRET
+                        );
+
+                        res.status(200).json({
+                            message: 'Logged in successfully.',
+                            token,
+                            user: users[0]
+                        });
+                    } else {
+                        res.status(statusCodes.user_error).json({
+                            message: 'Incorrect password!'
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.log(error);
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal,
+                    error
+                });
+            })
+    }
 }

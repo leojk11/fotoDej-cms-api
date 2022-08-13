@@ -1,5 +1,7 @@
 const User = require('../db/models/user');
 
+const bcrypt = require('bcrypt');
+
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
 const { generateDate } = require('../helpers/timeDate');
@@ -66,22 +68,37 @@ exports.addNew = (req, res) => {
         created_date: generateDate()
     };
 
-    if(data.firstname === '' || !data.firstname) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Firstname')
-        });
-    } else if(data.lastname === '' || !data.lastname) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Lastname')
-        });
-    } else if(data.username === '' || !data.username) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Username')
-        });
-    } else if(data.email === '' || !data.email) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Email')
-        });
-    } 
-    // else if()
+    // if(data.firstname === '' || !data.firstname) {
+    //     res.status(statusCodes.user_error).json({
+    //         message: errorMessages.required_field('Firstname')
+    //     });
+    // } else if(data.lastname === '' || !data.lastname) {
+    //     res.status(statusCodes.user_error).json({
+    //         message: errorMessages.required_field('Lastname')
+    //     });
+    // } else if(data.username === '' || !data.username) {
+    //     res.status(statusCodes.user_error).json({
+    //         message: errorMessages.required_field('Username')
+    //     });
+    // } else if(data.email === '' || !data.email) {
+    //     res.status(statusCodes.user_error).json({
+    //         message: errorMessages.required_field('Email')
+    //     });
+    // } 
+    // // else if()
+
+    data['password'] = bcrypt.hashSync(req.body.password, 10);
+
+    User.insertMany(data)
+        .then(_ => {
+            res.status(statusCodes.success).json({
+                message: 'New user has been added.'
+            })
+        })
+        .catch(error => {
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal,
+                error
+            });
+        })
 }

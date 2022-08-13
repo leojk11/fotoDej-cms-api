@@ -11,9 +11,14 @@ const adminSchema = new Schema({
         required: true
     },
     phone_number: {
+        type: String
+    },
+
+    role: {
         type: String,
         required: true
-    },
+    }, // ADMIN, HEAD_ADMIN, OP
+
     username: {
         type: String,
         required: true

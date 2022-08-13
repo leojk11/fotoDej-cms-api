@@ -29,7 +29,7 @@ const userSchema = new Schema({
         required: true
     },
     online_status: {
-        type: Boolean
+        type: String
     },
 
     number_of_created_albums: {
