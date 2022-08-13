@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-const { errorCodes } = require('../helpers/errorCodes');
+const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
 
 exports.verifyToken = (req, res, next) => {
@@ -12,7 +12,7 @@ exports.verifyToken = (req, res, next) => {
         jwt.verify(token, process.env.SECRET);
         next();
     } catch (error) {
-        res.status(errorCodes.not_authorized).json({
+        res.status(statusCodes.not_authorized).json({
             message: errorMessages.not_authorized
         });
     }

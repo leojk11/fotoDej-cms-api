@@ -1,6 +1,6 @@
 const User = require('../db/models/user');
 
-const { errorCodes } = require('../helpers/errorCodes');
+const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
 const { generateDate } = require('../helpers/timeDate');
 const { AccountStatus, OnlineStatus } = require('../enums/accountStatus');
@@ -30,21 +30,21 @@ exports.getAll = (req, res) => {
                         usersToSend.push(user);
                     }
 
-                    res.status(errorCodes.success).json({
+                    res.status(statusCodes.success).json({
                         page: parseInt(req.query.page),
                         total: countRes,
                         list: usersToSend
                     });
                 })
                 .catch(error => {
-                    res.status(errorCodes.server_error).json({
+                    res.status(statusCodes.server_error).json({
                         message: errorMessages.internal,
                         error
                     });
                 })
         })
         .catch(error => {
-            res.status(errorCodes.server_error).json({
+            res.status(statusCodes.server_error).json({
                 message: errorMessages.internal,
                 error
             });
@@ -67,20 +67,21 @@ exports.addNew = (req, res) => {
     };
 
     if(data.firstname === '' || !data.firstname) {
-        res.status(errorCodes.user_error).json({
+        res.status(statusCodes.user_error).json({
             message: errorMessages.required_field('Firstname')
         });
     } else if(data.lastname === '' || !data.lastname) {
-        res.status(errorCodes.user_error).json({
+        res.status(statusCodes.user_error).json({
             message: errorMessages.required_field('Lastname')
         });
     } else if(data.username === '' || !data.username) {
-        res.status(errorCodes.user_error).json({
+        res.status(statusCodes.user_error).json({
             message: errorMessages.required_field('Username')
         });
     } else if(data.email === '' || !data.email) {
-        res.status(errorCodes.user_error).json({
+        res.status(statusCodes.user_error).json({
             message: errorMessages.required_field('Email')
         });
-    } else if()
+    } 
+    // else if()
 }
