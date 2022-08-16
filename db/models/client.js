@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const adminSchema = new Schema({
+const clientSchema = new Schema({
     firstname: {
         type: String,
         required: true
@@ -13,11 +13,6 @@ const adminSchema = new Schema({
     phone_number: {
         type: String
     },
-
-    role: {
-        type: String,
-        required: true
-    }, // ADMIN, HEAD_ADMIN, OP
 
     username: {
         type: String,
@@ -35,7 +30,12 @@ const adminSchema = new Schema({
     profile_image: {
         type: String
     },
+
+    number_of_albums: {
+        type: Number,
+        required: true
+    }
 });
 
-const Admin = mongoose.model('Admin', adminSchema);
-module.exports = Admin;
+const Client = mongoose.model('Client', clientSchema);
+module.exports = Client;

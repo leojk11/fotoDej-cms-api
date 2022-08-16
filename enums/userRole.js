@@ -1,0 +1,3 @@
+exports.UserRole = {
+    USER: 'USER'
+}

@@ -24,6 +24,11 @@ const userSchema = new Schema({
         required: true
     },
 
+    role: {
+        type: String,
+        required: true
+    },
+
     account_status: {
         type: String,
         required: true
@@ -48,8 +53,21 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    created_time: {
+        type: String,
+        required: true
+    },
+
     modified_date: {
         type: String
+    },
+    modified_time: {
+        type: String
+    },
+
+    active: { // this is used to be able to create soft delete feature
+        type: Boolean,
+        required: true
     }
 });
 

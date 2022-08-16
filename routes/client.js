@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const { verifyToken } = require('../middlewares/common');
 
-const auth = require('../controllers/auth');
+const clients = require('../controllers/client');
 
-router.post('/admin', auth.adminLogin);
-router.post('/client', auth.clientLogin);
+router.get('/', clients.getAll);
+
+router.post('/', clients.addNew);
 
 module.exports = router;

@@ -1,11 +1,13 @@
 const User = require('../db/models/user');
+const Admin = require('../db/models/admin');
 
 const bcrypt = require('bcrypt');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
-const { generateDate } = require('../helpers/timeDate');
+const { generateDate, generateTime } = require('../helpers/timeDate');
 const { AccountStatus, OnlineStatus } = require('../enums/accountStatus');
+const { UserRole } = require('../enums/userRole');
 
 exports.getAll = (req, res) => {
 
@@ -16,7 +18,7 @@ exports.getAll = (req, res) => {
         skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
     }
 
-    const filters = {};
+    const filters = { active: true };
 
     User.find({ ...filters })
         .sort({ _id: 'asc' })
@@ -57,6 +59,10 @@ exports.addNew = (req, res) => {
     
     const data = {
         ...req.body,
+        role: UserRole.USER,
+
+        active: true,
+
         account_status: AccountStatus.NOT_ACTIVATED,
         online_status: OnlineStatus.OFFLINE,
 
@@ -65,40 +71,109 @@ exports.addNew = (req, res) => {
         number_of_schedules: 0,
         number_of_completed_schedules: 0,
 
-        created_date: generateDate()
+        created_date: generateDate(),
+        created_time: generateTime()
     };
 
-    // if(data.firstname === '' || !data.firstname) {
-    //     res.status(statusCodes.user_error).json({
-    //         message: errorMessages.required_field('Firstname')
-    //     });
-    // } else if(data.lastname === '' || !data.lastname) {
-    //     res.status(statusCodes.user_error).json({
-    //         message: errorMessages.required_field('Lastname')
-    //     });
-    // } else if(data.username === '' || !data.username) {
-    //     res.status(statusCodes.user_error).json({
-    //         message: errorMessages.required_field('Username')
-    //     });
-    // } else if(data.email === '' || !data.email) {
-    //     res.status(statusCodes.user_error).json({
-    //         message: errorMessages.required_field('Email')
-    //     });
-    // } 
-    // // else if()
+    if(data.firstname === '' || !data.firstname) {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.required_field('Firstname')
+        });
+    } else if(data.lastname === '' || !data.lastname) {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.required_field('Lastname')
+        });
+    } else if(data.username === '' || !data.username) {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.required_field('Username')
+        });
+    } else if(data.email === '' || !data.email) {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.required_field('Email')
+        });
+    } else {
+        User.find({ email: data.email })
+            .then(users => {
+                if (users.length > 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: `User with email ${ data.email } already exists.`
+                    })
+                } else {
+                    Admin.find({ email: data.email })
+                        .then(admins => {
+                            if(admins.length > 0) {
+                                res.status(statusCodes.user_error).json({
+                                    message: `Admin with email ${ data.email } already exists.`
+                                })
+                            } else {
+                                data['password'] = bcrypt.hashSync(req.body.password, 10);
 
-    data['password'] = bcrypt.hashSync(req.body.password, 10);
-
-    User.insertMany(data)
-        .then(_ => {
-            res.status(statusCodes.success).json({
-                message: 'New user has been added.'
+                                User.insertMany(data)
+                                    .then(_ => {
+                                        res.status(statusCodes.success).json({
+                                            message: 'New user has been added.'
+                                        })
+                                    })
+                                    .catch(error => {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal,
+                                            error
+                                        });
+                                    })
+                            }
+                        })
+                        .catch(error => {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal,
+                                error
+                            });
+                        });
+                }
             })
-        })
-        .catch(error => {
-            res.status(statusCodes.server_error).json({
-                message: errorMessages.internal,
-                error
+            .catch(error => {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal,
+                    error
+                });
+            })
+    }
+}
+
+exports.softDelete = (req, res) => {
+    if(req.params.id) {
+        User.find({ _id: req.params.id })
+            .then(users => {
+                if(users.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.not_exist('User', req.params.id)
+                    })
+                } else {
+                    User.updateOne(
+                        { _id: req.params.id },
+                        { active: false }
+                    )
+                    .then(_ => {
+                        res.status(statusCodes.success).json({
+                            message: `User ${ users[0].firstname } ${ users[0].lastname } has been deleted.`
+                        });
+                    })
+                    .catch(error => {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal,
+                            error
+                        });
+                    });
+                }
+            })
+            .catch(error => {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal,
+                    error
+                });
             });
-        })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
 }
