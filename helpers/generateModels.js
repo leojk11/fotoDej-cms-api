@@ -4,6 +4,7 @@ exports.generateUser = (user) => {
 
         firstname: user.firstname,
         lastname: user.lastname,
+        fullname: `${ user.firstname } ${ user.lastname }`,
         username: user.username,
 
         email: user.email,
@@ -28,4 +29,27 @@ exports.generateUser = (user) => {
     };
 
     return newUser;
+};
+
+exports.generateClient = (client) => {
+    const newClient = {
+        id: client._id,
+
+        firstname: client.firstname,
+        lastname: client.lastname,
+        fullname: `${ client.firstname } ${ client.lastname }`,
+
+        phone_number: client.phone_number,
+        email: client.email,
+
+        profile_image: client.profile_image,
+
+        number_of_albums: client.number_of_albums,
+
+        account_status: client.account_status,
+        active: client.active
+    };
+
+    return newClient;
 }
+

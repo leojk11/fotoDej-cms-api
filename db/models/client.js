@@ -34,6 +34,15 @@ const clientSchema = new Schema({
     number_of_albums: {
         type: Number,
         required: true
+    },
+
+    account_status: {
+        type: String,
+        required: true
+    },
+    active: {
+        type: Boolean,
+        require: true
     }
 });
 
