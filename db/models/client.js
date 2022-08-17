@@ -36,6 +36,29 @@ const clientSchema = new Schema({
         required: true
     },
 
+    created_date: {
+        type: String,
+        required: true
+    },
+    created_time: {
+        type: String,
+        required: true
+    },
+    created_by: {
+        type: String,
+        required: true
+    },
+
+    modified_date: {
+        type: String
+    },
+    modified_time: {
+        type: String
+    },
+    modified_by: {
+        type: String
+    },
+
     account_status: {
         type: String,
         required: true

@@ -9,6 +9,8 @@ router.get('/:id', users.getSingle);
 
 router.post('/', users.addNew);
 
+router.put('/:id', users.edit);
+
 router.delete('/:id', users.softDelete);
 router.delete('/delete/:id', users.delete);
 

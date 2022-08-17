@@ -46,6 +46,14 @@ exports.generateClient = (client) => {
 
         number_of_albums: client.number_of_albums,
 
+        created_date: client.created_date,
+        created_time: client.created_time,
+        created_by: client.created_by,
+
+        modified_date: client.modified_date,
+        modified_time: client.modified_time,
+        modified_by: client.modified_by,
+
         account_status: client.account_status,
         active: client.active
     };

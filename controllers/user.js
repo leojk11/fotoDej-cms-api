@@ -172,6 +172,79 @@ exports.addNew = (req, res) => {
     }
 }
 
+exports.edit = (req, res) => {
+    const id = req.params.id;
+
+    if(id) {
+        User.find({ _id: id })
+            .then(users => {
+                if(users.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.not_exist('User', id)
+                    });
+                } else {
+                    const data = { ...req.body };
+
+                    User.updateOne(
+                        { _id: id },
+                        { ...data }
+                    )
+                    .then(_ => {
+                        User.find({ _id: id })
+                            .then(newUser => {
+                                const updatedUser = generateUser(newUser[0]);
+
+                                res.status(statusCodes.success).json({
+                                    message: `User ${ updatedUser.fullname } has been updated.`,
+                                    user: updatedUser
+                                });
+                            })
+                            .catch(error => {
+                                if(error.kind === ErrorKind.ID) {
+                                    res.status(statusCodes.user_error).json({
+                                        message: errorMessages.invalid_id(req.params.id)
+                                    });
+                                } else {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal,
+                                        error
+                                    });
+                                }
+                            })
+                    })
+                    .catch(error => {
+                        if(error.kind === ErrorKind.ID) {
+                            res.status(statusCodes.user_error).json({
+                                message: errorMessages.invalid_id(req.params.id)
+                            });
+                        } else {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal,
+                                error
+                            });
+                        }
+                    })
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(req.params.id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
+}
+
 exports.softDelete = (req, res) => {
     if(req.params.id) {
         User.find({ _id: req.params.id })
@@ -191,18 +264,30 @@ exports.softDelete = (req, res) => {
                         });
                     })
                     .catch(error => {
-                        res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal,
-                            error
-                        });
+                        if(error.kind === ErrorKind.ID) {
+                            res.status(statusCodes.user_error).json({
+                                message: errorMessages.invalid_id(req.params.id)
+                            });
+                        } else {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal,
+                                error
+                            });
+                        }
                     });
                 }
             })
             .catch(error => {
-                res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal,
-                    error
-                });
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(req.params.id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
             });
     } else {
         res.status(statusCodes.user_error).json({

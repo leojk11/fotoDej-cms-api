@@ -8,6 +8,7 @@ const { errorMessages } = require('../helpers/errorMessages');
 const { generateClient } = require('../helpers/generateModels');
 const { ErrorKind } = require('../enums/errorKind');
 const { AccountStatus } = require('../enums/accountStatus');
+const { generateDate, generateTime } = require('../helpers/timeDate');
 
 exports.getAll = (req, res) => {
 
@@ -90,7 +91,12 @@ exports.addNew = (req, res) => {
         ...req.body,
         number_of_albums: 0,
         active: true,
-        account_status: AccountStatus.ACTIVE
+        account_status: AccountStatus.ACTIVE,
+
+        created_date: generateDate(),
+        created_time: generateTime(),
+
+        created_by: 'by admin'
     };
 
     if(data.firstname === '' || !data.firstname) {
@@ -162,7 +168,13 @@ exports.addNew = (req, res) => {
 
 exports.edit = (req, res) => {
     if(req.params.id) {
-        const data = { ...req.body };
+        const data = { 
+            ...req.body,
+            
+            modified_date: generateDate(),
+            modified_time: generateTime(),
+            modified_by: 'by admin'
+        };
 
         Client.find({ _id: req.params.id })
             .then(clients => {
