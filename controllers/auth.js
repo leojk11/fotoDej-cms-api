@@ -39,7 +39,7 @@ exports.adminLogin = (req, res) => {
                                     res.status(200).json({
                                         message: 'Logged in successfully.',
                                         token,
-                                        admin: admins[0]
+                                        user: admins[0]
                                     });
                                 } else {
                                     res.status(statusCodes.user_error).json({
@@ -65,7 +65,7 @@ exports.adminLogin = (req, res) => {
                         res.status(200).json({
                             message: 'Logged in successfully.',
                             token,
-                            admin: admins[0]
+                            user: admins[0]
                         });
                     } else {
                         res.status(statusCodes.user_error).json({
@@ -111,7 +111,7 @@ exports.clientLogin = (req, res) => {
                         res.status(200).json({
                             message: 'Logged in successfully.',
                             token,
-                            client: users[0]
+                            user: users[0]
                         });
                     } else {
                         res.status(statusCodes.user_error).json({
