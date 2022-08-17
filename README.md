@@ -10,4 +10,20 @@ https://documenter.getpostman.com/view/14487622/VUjTmPW7
 
 ## User
 - id: string
-
+- firstname: string
+- lastname: string
+- fullname: string
+- email: string
+- role: string
+- account_status: string
+- online_status: string
+- number_of_created_albums: number
+- number_of_schedules: number
+- number_of_completed_schedules: number
+- created_date: string
+- created_time: string
+- created_by: string
+- modified_date: string
+- modified_time: string
+- modified_by: string
+- active: boolean
