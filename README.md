@@ -6,7 +6,7 @@ https://foto-dej-cms-api.herokuapp.com/
 #Postman documentation
 https://documenter.getpostman.com/view/14487622/VUjTmPW7
 
-## Models
+# Models
 
 ## User
 - id: string
@@ -27,3 +27,21 @@ https://documenter.getpostman.com/view/14487622/VUjTmPW7
 - modified_time: string
 - modified_by: string
 - active: boolean
+
+## Client
+- id: string
+- firstname: string
+- lastname: string
+- fullname: string
+- phone_number: string
+- email: string
+- profile_image: string
+- number_of_albums: number
+- created_date: string
+- created_time: string
+- created_by: string
+- modified_date: string
+- modified_time: string
+- modified_by: string
+- active: boolean
+- account_status: string
