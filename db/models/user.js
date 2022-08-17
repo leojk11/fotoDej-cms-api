@@ -57,11 +57,17 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    created_by: {
+        type: String
+    },
 
     modified_date: {
         type: String
     },
     modified_time: {
+        type: String
+    },
+    modified_by: {
         type: String
     },
 

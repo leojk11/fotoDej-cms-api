@@ -27,24 +27,30 @@ exports.adminLogin = (req, res) => {
                         .then(users => {
                             if(users.length === 0) {
                                 res.status(statusCodes.user_error).json({
-                                    message: `User with email ${ data.email } does not exist.`
+                                    message: errorMessages.user_not_exist(data.email)
                                 });
                             } else {
-                                if(bcrypt.compareSync(data.password, admins[0].password)) {
-                                    const token = jwt.sign(
-                                        { ...admins[0] }, 
-                                        process.env.SECRET
-                                    );
-            
-                                    res.status(200).json({
-                                        message: 'Logged in successfully.',
-                                        token,
-                                        user: admins[0]
-                                    });
+                                if(users[0].active) {
+                                    if(bcrypt.compareSync(data.password, admins[0].password)) {
+                                        const token = jwt.sign(
+                                            { ...admins[0] }, 
+                                            process.env.SECRET
+                                        );
+                
+                                        res.status(200).json({
+                                            message: 'Logged in successfully.',
+                                            token,
+                                            user: admins[0]
+                                        });
+                                    } else {
+                                        res.status(statusCodes.user_error).json({
+                                            message: 'Incorrect password!'
+                                        });
+                                    }
                                 } else {
                                     res.status(statusCodes.user_error).json({
-                                        message: 'Incorrect password!'
-                                    });
+                                        message: errorMessages.user_not_exist(data.email)
+                                    })
                                 }
                             }
                         })
@@ -99,29 +105,35 @@ exports.clientLogin = (req, res) => {
             .then(users => {
                 if(users.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: `Profile with email ${ data.email } does not exist.`
+                        message: errorMessages.user_not_exist(data.email)
                     });
                 } else {
-                    if(bcrypt.compareSync(data.password, users[0].password)) {
-                        const token = jwt.sign(
-                            { ...users[0] }, 
-                            process.env.SECRET
-                        );
-
-                        res.status(200).json({
-                            message: 'Logged in successfully.',
-                            token,
-                            user: users[0]
-                        });
+                    if(users[0].active) {
+                        if(bcrypt.compareSync(data.password, users[0].password)) {
+                            const token = jwt.sign(
+                                { ...users[0] }, 
+                                process.env.SECRET
+                            );
+    
+                            res.status(200).json({
+                                message: 'Logged in successfully.',
+                                token,
+                                user: users[0]
+                            });
+                        } else {
+                            res.status(statusCodes.user_error).json({
+                                message: 'Incorrect password!'
+                            });
+                        }
                     } else {
                         res.status(statusCodes.user_error).json({
-                            message: 'Incorrect password!'
+                            message: errorMessages.user_not_exist(data.email)
                         });
                     }
+                    
                 }
             })
             .catch(error => {
-                console.log(error);
                 res.status(statusCodes.server_error).json({
                     message: errorMessages.internal,
                     error
