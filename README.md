@@ -22,10 +22,10 @@ https://documenter.getpostman.com/view/14487622/VUjTmPW7
 - number_of_completed_schedules: number
 - created_date: string
 - created_time: string
-- created_by: string
+- created_by: { id: string, firstname: string; lastname: string, fullname: string; email: string; username: string; role: string; profile_image: string }
 - modified_date: string
 - modified_time: string
-- modified_by: string
+- modified_by: { id: string, firstname: string; lastname: string, fullname: string; email: string; username: string; role: string; profile_image: string }
 - active: boolean
 
 ## Client
@@ -39,9 +39,10 @@ https://documenter.getpostman.com/view/14487622/VUjTmPW7
 - number_of_albums: number
 - created_date: string
 - created_time: string
-- created_by: string
+- created_by: { id: string, firstname: string; lastname: string, fullname: string; email: string; username: string; role: string; profile_image: string }
 - modified_date: string
 - modified_time: string
-- modified_by: string
+- modified_by: { id: string, firstname: string; lastname: string, fullname: string; email: string; username: string; role: string; profile_image: string }
 - active: boolean
 - account_status: string
+- deleted_by: { id: string, firstname: string; lastname: string, fullname: string; email: string; username: string; role: string; profile_image: string }

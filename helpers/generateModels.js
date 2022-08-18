@@ -23,10 +23,12 @@ exports.generateUser = (user) => {
 
         modified_date: user.modified_date,
         modified_time: user.modified_time,
-        modified_by: user.modified_by,
 
         active: user.active
     };
+    if(user.modified_by) {
+        newUser['modified_by'] = JSON.parse(user.modified_by);
+    }
 
     return newUser;
 };
@@ -48,16 +50,33 @@ exports.generateClient = (client) => {
 
         created_date: client.created_date,
         created_time: client.created_time,
-        created_by: client.created_by,
+        created_by: JSON.parse(client.created_by),
 
         modified_date: client.modified_date,
         modified_time: client.modified_time,
-        modified_by: client.modified_by,
 
         account_status: client.account_status,
         active: client.active
     };
+    if(client.modified_by) {
+        newClient['modified_by'] = JSON.parse(client.modified_by);
+    }
 
     return newClient;
+}
+
+exports.generateCleanModel = (user) => {
+    const newCleanUser = {
+        id: user._id,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        fullname: `${ user.firstname } ${ user.lastname }`,
+        email: user.email,
+        username: user.username,
+        profile_image: user.profile_image,
+        role: user.role
+    };
+
+    return newCleanUser;
 }
 

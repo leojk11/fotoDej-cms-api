@@ -66,6 +66,9 @@ const clientSchema = new Schema({
     active: {
         type: Boolean,
         require: true
+    },
+    deleted_by: {
+        type: String
     }
 });
 

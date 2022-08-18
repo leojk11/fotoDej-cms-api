@@ -21,7 +21,7 @@ exports.verifyToken = (req, res, next) => {
 exports.parseJwt = (token) => {
     const base64Payload = token.split('.')[1];
     const payload = Buffer.from(base64Payload, 'base64');
-    return JSON.parse(payload.toString());
+    return JSON.parse(payload.toString())._doc;
 }
 
 exports.errorHandler = (err, req, res, next) => {

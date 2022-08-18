@@ -5,10 +5,11 @@ const bcrypt = require('bcrypt');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
-const { generateClient } = require('../helpers/generateModels');
+const { generateClient, generateCleanModel } = require('../helpers/generateModels');
 const { ErrorKind } = require('../enums/errorKind');
 const { AccountStatus } = require('../enums/accountStatus');
 const { generateDate, generateTime } = require('../helpers/timeDate');
+const { parseJwt } = require('../middlewares/common');
 
 exports.getAll = (req, res) => {
 
@@ -42,6 +43,7 @@ exports.getAll = (req, res) => {
                     });
                 })
                 .catch(error => {
+                    console.log(error);
                     res.status(statusCodes.server_error).json({
                         message: errorMessages.internal,
                         error
@@ -87,6 +89,7 @@ exports.getSingle = (req, res) => {
 }
 
 exports.addNew = (req, res) => {
+    const token = req.headers.authorization;
     const data = { 
         ...req.body,
         number_of_albums: 0,
@@ -96,7 +99,7 @@ exports.addNew = (req, res) => {
         created_date: generateDate(),
         created_time: generateTime(),
 
-        created_by: 'by admin'
+        created_by: JSON.stringify(generateCleanModel(parseJwt(token)))
     };
 
     if(data.firstname === '' || !data.firstname) {
@@ -167,13 +170,15 @@ exports.addNew = (req, res) => {
 }
 
 exports.edit = (req, res) => {
+    const token = req.headers.authorization;
+
     if(req.params.id) {
         const data = { 
             ...req.body,
             
             modified_date: generateDate(),
             modified_time: generateTime(),
-            modified_by: 'by admin'
+            modified_by: JSON.stringify(generateCleanModel(parseJwt(token)))
         };
 
         Client.find({ _id: req.params.id })
