@@ -4,16 +4,16 @@ const { verifyToken } = require('../middlewares/common');
 
 const clients = require('../controllers/client');
 
-router.get('/', clients.getAll);
-router.get('/:id', clients.getSingle);
+router.get('/', verifyToken, clients.getAll);
+router.get('/:id', verifyToken, clients.getSingle);
 
-router.post('/', clients.addNew);
+router.post('/', verifyToken, clients.addNew);
 
-router.put('/:id', clients.edit);
+router.put('/:id', verifyToken, clients.edit);
 
-router.patch('/recover/:id', clients.recover);
+router.patch('/recover/:id', verifyToken, clients.recover);
 
-router.delete('/:id', clients.softDelete);
-router.delete('/delete/:id', clients.delete);
+router.delete('/:id', verifyToken, clients.softDelete);
+router.delete('/delete/:id', verifyToken, clients.delete);
 
 module.exports = router;

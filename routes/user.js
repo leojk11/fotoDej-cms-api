@@ -4,14 +4,14 @@ const { verifyToken } = require('../middlewares/common');
 
 const users = require('../controllers/user');
 
-router.get('/', users.getAll);
-router.get('/:id', users.getSingle);
+router.get('/', verifyToken, users.getAll);
+router.get('/:id', verifyToken,users.getSingle);
 
-router.post('/', users.addNew);
+router.post('/', verifyToken, users.addNew);
 
-router.put('/:id', users.edit);
+router.put('/:id', verifyToken, users.edit);
 
-router.delete('/:id', users.softDelete);
-router.delete('/delete/:id', users.delete);
+router.delete('/:id', verifyToken, users.softDelete);
+router.delete('/delete/:id', verifyToken, users.delete);
 
 module.exports = router;
