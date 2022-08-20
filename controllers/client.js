@@ -58,6 +58,52 @@ exports.getAll = (req, res) => {
         })
 }
 
+exports.getSoftDeletedClients = (req, res) => {
+
+    let skip = 0;
+    if(parseInt(req.query.page) === 1) {
+        skip = 0;
+    } else {
+        skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
+    }
+
+    const filters = { active: false };
+
+    Client.find({ ...filters })
+        .sort({ _id: 'asc' })
+        .skip(skip)
+        .limit(parseInt(req.query.take))
+        .then(clients => {
+            Client.find({ ...filters })
+                .count()
+                .then(countRes => {
+                    const clientsToSend = [];
+
+                    for(const client of clients) {
+                        clientsToSend.push(generateClient(client));
+                    }
+
+                    res.status(statusCodes.success).json({
+                        page: parseInt(req.query.page),
+                        total: countRes,
+                        list: clientsToSend
+                    });
+                })
+                .catch(error => {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                })
+        })
+        .catch(error => {
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal,
+                error
+            });
+        })
+}
+
 exports.getSingle = (req, res) => {
     if(req.params.id) {
         Client.find({ _id: req.params.id })
@@ -90,6 +136,7 @@ exports.getSingle = (req, res) => {
 
 exports.addNew = (req, res) => {
     const token = req.headers.authorization;
+
     const data = { 
         ...req.body,
         number_of_albums: 0,
@@ -247,6 +294,8 @@ exports.edit = (req, res) => {
 }
 
 exports.softDelete = (req, res) => {
+    const token = req.headers.authorization;
+
     if(req.params.id) {
         Client.find({ _id: req.params.id })
             .then(clients => {
@@ -257,7 +306,10 @@ exports.softDelete = (req, res) => {
                 } else {
                     Client.updateOne(
                         { _id: req.params.id },
-                        { active: false }
+                        { 
+                            active: false,
+                            deleted_by: JSON.stringify(generateCleanModel(parseJwt(token)))
+                        }
                     )
                     .then(_ => {
                         res.status(statusCodes.success).json({
@@ -312,8 +364,9 @@ exports.recover = (req, res) => {
                     )
                     .then(_ => {
                         res.status(statusCodes.success).json({
-                            message: `User ${ generateClient(clients[0]).fullname } has been recovered.`
-                        })
+                            message: `User ${ generateClient(clients[0]).fullname } has been recovered.`,
+                            user: generateClient(clients[0])
+                        });
                     })
                     .catch(error => {
                         if(error.kind === ErrorKind.ID) {

@@ -296,6 +296,58 @@ exports.softDelete = (req, res) => {
     }
 }
 
+exports.recover = (req, res) => {
+    if(req.params.id) {
+        User.find({ _id: req.params.id })
+            .then(users => {
+                if(users.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.not_exist('User', req.params.id)
+                    });
+                } else {
+                    User.updateOne(
+                        { _id: req.params.id },
+                        { active: true }
+                    )
+                    .then(_ => {
+                        res.status(statusCodes.success).json({
+                            message: `User ${ generateUser(users[0]).fullname } has been recovered.`,
+                            user: generateUser(users[0])
+                        })
+                    })
+                    .catch(error => {
+                        if(error.kind === ErrorKind.ID) {
+                            res.status(statusCodes.user_error).json({
+                                message: errorMessages.invalid_id(req.params.id)
+                            });
+                        } else {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal,
+                                error
+                            });
+                        }
+                    })
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(req.params.id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
+}
+
 exports.delete = (req, res) => {
     if(req.params.id) {
         User.find({ _id: req.params.id })

@@ -11,6 +11,8 @@ router.post('/', verifyToken, users.addNew);
 
 router.put('/:id', verifyToken, users.edit);
 
+router.patch('/recover/:id', verifyToken, users.recover);
+
 router.delete('/:id', verifyToken, users.softDelete);
 router.delete('/delete/:id', verifyToken, users.delete);
 

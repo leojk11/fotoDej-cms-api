@@ -61,6 +61,9 @@ exports.generateClient = (client) => {
     if(client.modified_by) {
         newClient['modified_by'] = JSON.parse(client.modified_by);
     }
+    if(client.deleted_by) {
+        newClient['deleted_by'] = JSON.parse(client.deleted_by);
+    }
 
     return newClient;
 }
