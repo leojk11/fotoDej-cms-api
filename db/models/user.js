@@ -74,6 +74,12 @@ const userSchema = new Schema({
     active: { // this is used to be able to create soft delete feature
         type: Boolean,
         required: true
+    },
+    deleted_by_id: {
+        type: String
+    },
+    deleted_by: {
+        type: String
     }
 });
 

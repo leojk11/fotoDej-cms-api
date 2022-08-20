@@ -83,3 +83,38 @@ exports.generateCleanModel = (user) => {
     return newCleanUser;
 }
 
+exports.generateAlbum = (album) => {
+    const newAlbum = {
+        id: album._id,
+        images: album.images,
+        images_count: album.images_count,
+        assigned_date: album.assigned_date,
+        assigned_to_id: album.assigned_to_id,
+        assigned_by_id: album.assigned_by_id,
+        created_date: album.created_date,
+        created_by_id: album.created_by_id,
+        modified_date: album.modified_date,
+        modified_by_id: album.modified_by_id,
+        active: album.active,
+        deleted_by_id: album.deleted_by_id
+    };  
+
+    if(album.assigned_to) {
+        newAlbum['assigned_to'] = JSON.parse(album.assigned_to);
+    }
+    if(album.assigned_by) {
+        newAlbum['assigned_by'] = JSON.parase(album.assigned_by);
+    }
+    if(album.created_by) {
+        newAlbum['created_by'] = JSON.parse(album.created_by);
+    }
+    if(album.modified_by) {
+        newAlbum['modified_by'] = JSON.parse(album.modified_by);
+    }
+    if(album.deleted_by) {
+        newAlbum['deleted_by'] = JSON.parse(album.deleted_by);
+    }
+
+    return newAlbum;
+}
+
