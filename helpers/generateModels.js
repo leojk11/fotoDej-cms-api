@@ -88,6 +88,8 @@ exports.generateAlbum = (album) => {
         id: album._id,
         images: album.images,
         images_count: album.images_count,
+        selected_images: album.selected_image,
+        selected_images_count: album.selected_images_count,
         assigned_date: album.assigned_date,
         assigned_to_id: album.assigned_to_id,
         assigned_by_id: album.assigned_by_id,

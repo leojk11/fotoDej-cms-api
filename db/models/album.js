@@ -14,6 +14,12 @@ const albumSchema = new Schema({
         type: Number,
         required: true
     },
+    selected_images: {
+        type: String
+    },
+    selected_images_count: {
+        type: Number
+    },
 
     assigned_date: {
         type: String

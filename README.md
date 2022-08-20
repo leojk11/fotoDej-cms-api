@@ -75,6 +75,8 @@ https://documenter.getpostman.com/view/14487622/VUjTmPW7
 - title: string
 - images: string[]
 - images_count: number
+- selected_images: string[]
+- selected_images_count: number
 - assigned_date: string
 - assigned_to_id: string
 - assigned_to: CleanUser
