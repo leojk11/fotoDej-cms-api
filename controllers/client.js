@@ -358,28 +358,34 @@ exports.recover = (req, res) => {
                         message: errorMessages.not_exist('Client', req.params.id)
                     });
                 } else {
-                    Client.updateOne(
-                        { _id: req.params.id },
-                        { active: true }
-                    )
-                    .then(_ => {
-                        res.status(statusCodes.success).json({
-                            message: `User ${ generateClient(clients[0]).fullname } has been recovered.`,
-                            user: generateClient(clients[0])
+                    if(clients[0].active) {
+                        res.status(statusCodes.user_error).json({
+                            message: 'User is already active.'
                         });
-                    })
-                    .catch(error => {
-                        if(error.kind === ErrorKind.ID) {
-                            res.status(statusCodes.user_error).json({
-                                message: errorMessages.invalid_id(req.params.id)
+                    } else {
+                        Client.updateOne(
+                            { _id: req.params.id },
+                            { active: true }
+                        )
+                        .then(_ => {
+                            res.status(statusCodes.success).json({
+                                message: `User ${ generateClient(clients[0]).fullname } has been recovered.`,
+                                user: generateClient(clients[0])
                             });
-                        } else {
-                            res.status(statusCodes.server_error).json({
-                                message: errorMessages.internal,
-                                error
-                            });
-                        }
-                    })
+                        })
+                        .catch(error => {
+                            if(error.kind === ErrorKind.ID) {
+                                res.status(statusCodes.user_error).json({
+                                    message: errorMessages.invalid_id(req.params.id)
+                                });
+                            } else {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal,
+                                    error
+                                });
+                            }
+                        });
+                    }
                 }
             })
             .catch(error => {
