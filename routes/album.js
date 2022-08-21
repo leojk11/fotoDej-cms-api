@@ -4,5 +4,15 @@ const { verifyToken } = require('../middlewares/common');
 
 const albums = require('../controllers/album');
 
+router.get('/', verifyToken, albums.getAll);
+router.get('/deleted', verifyToken, albums.getAllSoftDeleted);
+router.get('/assinged/:id', verifyToken, albums.getAllAssignedTo);
+router.get('/assigned_by/:id', verifyToken, albums.getAllAssignedBy);
+router.get('/created_by/:id', verifyToken, albums.getAllCreatedBy);
+router.get('/:id', verifyToken, albums.getSingle);
+
+router.post('/', verifyToken, albums.addNew);
+
+router.put('/:id', verifyToken, albums.edit);
 
 module.exports = router;

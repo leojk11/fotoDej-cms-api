@@ -7,10 +7,10 @@ const albumSchema = new Schema({
         required: true
     },
 
-    images: { // not required when creating the album
+    images: {
         type: String
     },
-    images_count: { // required because it will be 0 by default
+    images_count: {
         type: Number,
         required: true
     },
