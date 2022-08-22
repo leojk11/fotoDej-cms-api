@@ -306,6 +306,7 @@ exports.getAllCreatedBy = (req, res) => {
 // add new
 exports.addNew = (req, res) => {
     const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
 
     const data = {
         ...req.body,
@@ -316,8 +317,8 @@ exports.addNew = (req, res) => {
         selected_images_count: 0,
 
         created_date: generateDate(),
-        created_by: JSON.stringify(generateCleanModel(parseJwt(token))),
-        created_by_id: parseJwt(token)._id,
+        created_by: JSON.stringify(generateCleanModel(loggedInUser)),
+        created_by_id: loggedInUser._id,
 
         active: true
     };
@@ -346,7 +347,9 @@ exports.addNew = (req, res) => {
 // edit
 exports.edit = (req, res) => {
     const id = req.params.id;
+
     const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
 
     if(id) {
         Album.find({ _id: id })
@@ -361,8 +364,49 @@ exports.edit = (req, res) => {
                             message: errorMessages.not_exist('Album', id)
                         });
                     } else {
-                        const data = { ...req.body };
-                        
+                        const data = { 
+                            ...req.body,
+
+                            modified_date: generateDate(),
+                            modified_by_id: loggedInUser._id,
+                            modified_by: JSON.stringify(generateCleanModel(loggedInUser))
+                        };
+
+                        Album.updateOne(
+                            { _id: id },
+                            { ...data }
+                        )
+                        .then(_ => {
+                            Album.find({ _id: id })
+                                .then(newAlbum => {
+                                    res.status(statusCodes.success).json({
+                                        message: 'Album has been updated.',
+                                        album: generateAlbum(newAlbum[0])
+                                    });
+                                })
+                                .catch(error => {
+                                    if(error.kind === ErrorKind.ID) {
+                                        res.status(statusCodes.user_error).json({
+                                            message: errorMessages.invalid_id(req.params.id)
+                                        });
+                                    } else {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal
+                                        });
+                                    }
+                                })
+                        })
+                        .catch(error => {
+                            if(error.kind === ErrorKind.ID) {
+                                res.status(statusCodes.user_error).json({
+                                    message: errorMessages.invalid_id(req.params.id)
+                                });
+                            } else {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal
+                                });
+                            }
+                        })
                     }
                 }
             })
@@ -383,10 +427,193 @@ exports.edit = (req, res) => {
         });
     }
 }
-// add images
-// edit images
-// select images
-// edit selected images
+// add/edit images
+exports.images = (req, res) => {
+    const id = req.params.id;
+
+    const images = req.body.images;
+    const splittedImages = images.split(',');
+    
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    if(id) {
+        if(images) {
+            Album.find({ _id: id })
+                .then(albums => {
+                    if(albums.length === 0) {
+                        res.status(statusCodes.user_error).then({
+                            message: errorMessages.not_exist('Album', id)
+                        });
+                    } else {
+                        if(albums[0].active) {
+                            Album.updateOne(
+                                { _id: id },
+                                { 
+                                    images: images,
+                                    images_count: splittedImages.length,
+
+                                    modified_date: generateDate(),
+                                    modified_by_id: loggedInUser._id,
+                                    modified_by: JSON.stringify(generateCleanModel(loggedInUser))
+                                }
+                            )
+                                .then(_ => {
+                                    Album.find({ _id: id })
+                                        .then(newAlbum => {
+                                            res.status(statusCodes.success).json({
+                                                message: 'Images have been updated.',
+                                                album: generateAlbum(newAlbum[0])
+                                            });
+                                        })
+                                        .catch(error => {
+                                            console.log(error);
+                                            if(error.kind === ErrorKind.ID) {
+                                                res.status(statusCodes.user_error).json({
+                                                    message: errorMessages.invalid_id(req.params.id)
+                                                });
+                                            } else {
+                                                res.status(statusCodes.server_error).json({
+                                                    message: errorMessages.internal,
+                                                    error
+                                                });
+                                            }
+                                        })
+                                })
+                                .catch(error => {
+                                    console.log(error);
+                                    if(error.kind === ErrorKind.ID) {
+                                        res.status(statusCodes.user_error).json({
+                                            message: errorMessages.invalid_id(req.params.id)
+                                        });
+                                    } else {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal,
+                                            error
+                                        });
+                                    }
+                                })
+                        } else {
+                            res.status(statusCodes.user_error).then({
+                                message: errorMessages.not_exist('Album', id)
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.log(error);
+                    if(error.kind === ErrorKind.ID) {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.invalid_id(req.params.id)
+                        });
+                    } else {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal,
+                            error
+                        });
+                    }
+                })
+        } else {
+            res.status(statusCodes.user_error).json({
+                message: 'Please select images.'
+            });
+        }
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
+}
+// select/edit selected images
+exports.selectedImages = (req, res) => {
+    const id = req.params.id;
+
+    if(id) {
+        Album.find({ _id: id })
+            .then(albums => {
+                if(albums.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.not_exist('Album', id)
+                    });
+                } else {
+                    if(albums[0].active) {
+                        const selectedImages = req.body.selected_images;
+                        const splittedImages = selectedImages.split(',');
+
+                        if(selectedImages) {
+                            Album.updateOne(
+                                { _id: id },
+                                { 
+                                    selected_images: selectedImages,
+                                    selected_images_count: splittedImages.length
+                                }
+                            )
+                            .then(_ => {
+                                Album.find({ _id: id })
+                                    .then(newAlbum => {
+                                        res.status(statusCodes.success).json({
+                                            message: 'Images have been selected.',
+                                            album: generateAlbum(newAlbum[0])
+                                        });
+                                    })
+                                    .catch(error => {
+                                        if(error.kind === ErrorKind.ID) {
+                                            res.status(statusCodes.user_error).json({
+                                                message: errorMessages.invalid_id(req.params.id)
+                                            });
+                                        } else {
+                                            res.status(statusCodes.server_error).json({
+                                                message: errorMessages.internal,
+                                                error
+                                            });
+                                        }
+                                    })
+                            })
+                            .catch(error => {
+                                if(error.kind === ErrorKind.ID) {
+                                    res.status(statusCodes.user_error).json({
+                                        message: errorMessages.invalid_id(req.params.id)
+                                    });
+                                } else {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal,
+                                        error
+                                    });
+                                }
+                            })
+                        } else {
+                            res.status(statusCodes.user_error).json({
+                                message: 'Please select images.'
+                            });
+                        }
+                    } else {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.not_exist('Album', id)
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.log(error);
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(req.params.id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
+}
+// reasign to other user
+
 
 // soft delete
 // deleted
