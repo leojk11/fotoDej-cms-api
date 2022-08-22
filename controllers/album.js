@@ -1,4 +1,5 @@
 const Album = require('../db/models/album');
+const Client = require('../db/models/client');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
@@ -612,8 +613,117 @@ exports.selectedImages = (req, res) => {
         });
     }
 }
-// reasign to other user
+// assign/reasign to other user
+exports.assignUser = (req, res) => {
+    const id = req.params.id;
+    const newUser = req.body.user;
 
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    if(id) {
+        Album.find({ _id: id, active: true })
+            .then(albums => {
+                if(albums.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.not_exist('Album', id)
+                    });
+                } else {
+                    if(newUser) {
+                        Client.find({ _id: newUser, active: true })
+                            .then(clients => {
+                                if(clients.length === 0) {
+                                    res.status(statusCodes.user_error).json({
+                                        message: errorMessages.not_exist('User', id)
+                                    });
+                                } else {
+                                    Album.updateOne(
+                                        { _id: id },
+                                        { 
+                                            assigned_to_id: clients[0]._id,
+                                            assigned_to: JSON.stringify(generateCleanModel(clients[0])),
+
+                                            modified_date: generateDate(),
+                                            modified_by_id: loggedInUser._id,
+                                            modified_by: JSON.stringify(generateCleanModel(loggedInUser))
+                                        }
+                                    )
+                                    .then(_ => {
+                                        Album.find({ _id: id })
+                                            .then(newAlbum => {
+                                                res.status(statusCodes.success).json({
+                                                    message: 'User has been assigned.',
+                                                    album: generateAlbum(newAlbum[0])
+                                                });
+                                            })
+                                            .catch(error => {
+                                                console.log(error);
+                                                if(error.kind === ErrorKind.ID) {
+                                                    res.status(statusCodes.user_error).json({
+                                                        message: errorMessages.invalid_id(req.params.id)
+                                                    });
+                                                } else {
+                                                    res.status(statusCodes.server_error).json({
+                                                        message: errorMessages.internal,
+                                                        error
+                                                    });
+                                                }
+                                            })
+                                    })
+                                    .catch(error => {
+                                        console.log(error);
+                                        if(error.kind === ErrorKind.ID) {
+                                            res.status(statusCodes.user_error).json({
+                                                message: errorMessages.invalid_id(req.params.id)
+                                            });
+                                        } else {
+                                            res.status(statusCodes.server_error).json({
+                                                message: errorMessages.internal,
+                                                error
+                                            });
+                                        }
+                                    })
+                                }
+                            })
+                            .catch(error => {
+                                console.log(error);
+                                if(error.kind === ErrorKind.ID) {
+                                    res.status(statusCodes.user_error).json({
+                                        message: errorMessages.invalid_id(req.params.id)
+                                    });
+                                } else {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal,
+                                        error
+                                    });
+                                }
+                            })
+                    } else {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.required_field('New user')
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                console.log(error);
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(req.params.id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
+}
 
 // soft delete
 // deleted
