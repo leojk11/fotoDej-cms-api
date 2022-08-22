@@ -19,4 +19,6 @@ router.patch('/:id/images', verifyToken, albums.images);
 router.patch('/:id/selected_images', verifyToken, albums.selectedImages);
 router.patch('/:id/assign', verifyToken, albums.assignUser);
 
+router.delete('/:id', verifyToken, albums.delete);
+
 module.exports = router;

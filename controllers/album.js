@@ -725,5 +725,53 @@ exports.assignUser = (req, res) => {
     }
 }
 
-// soft delete
 // deleted
+exports.delete = (req, res) => {
+    const id = req.params.id;
+
+    if(id) {
+        Album.find({ _id: id })
+            .then(albums => {
+                if(albums.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.not_exist('Album', id)
+                    });
+                } else {
+                    Album.deleteOne({ _id: id })
+                        .then(_ => {
+                            res.status(statusCodes.success).json({
+                                message: `Album ${ generateAlbum(albums[0]).title } has been deleted permanently.`
+                            })
+                        })
+                        .catch(error => {
+                            if(error.kind === ErrorKind.ID) {
+                                res.status(statusCodes.user_error).json({
+                                    message: errorMessages.invalid_id(id)
+                                });
+                            } else {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal,
+                                    error
+                                });
+                            }
+                        })
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
+}
