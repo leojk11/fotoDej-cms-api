@@ -1,7 +1,6 @@
 const Client = require('../db/models/client');
 const Modification = require('../db/models/modification');
 
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
 const { statusCodes } = require('../helpers/statusCodes');
@@ -12,10 +11,12 @@ const {
     generateModificationForDb,
     generateModification 
 } = require('../helpers/generateModels');
+const { generateDate, generateTime } = require('../helpers/timeDate');
+
 const { ErrorKind } = require('../enums/errorKind');
 const { AccountStatus } = require('../enums/accountStatus');
 const { ModificationType } = require('../enums/modificationType');
-const { generateDate, generateTime } = require('../helpers/timeDate');
+
 const { parseJwt } = require('../middlewares/common');
 
 exports.getAll = (req, res) => {
@@ -275,7 +276,6 @@ exports.edit = (req, res) => {
                                             error
                                         });
                                     })
-
                             })
                             .catch(error => {
                                 if(error.kind === ErrorKind.ID) {
@@ -324,32 +324,52 @@ exports.edit = (req, res) => {
 }
 
 exports.softDelete = (req, res) => {
-    const token = req.headers.authorization;
+    const id = req.params.id;
 
-    if(req.params.id) {
-        Client.find({ _id: req.params.id })
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    if(id) {
+        Client.find({ _id: id })
             .then(clients => {
                 if(clients.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', req.params.id)
+                        message: errorMessages.not_exist('Client', id)
                     });
                 } else {
+                    const modification = generateModificationForDb({
+                        cluster: 'Client',
+                        id,
+                        modification: ModificationType.SOFT_DELETED_CLIENT,
+                        modified_by: generateCleanModel(loggedInUser)
+                    });
+
                     Client.updateOne(
-                        { _id: req.params.id },
+                        { _id: id },
                         { 
                             active: false,
-                            deleted_by: JSON.stringify(generateCleanModel(parseJwt(token)))
+                            deleted_by: JSON.stringify(generateCleanModel(loggedInUser))
                         }
                     )
                     .then(_ => {
-                        res.status(statusCodes.success).json({
-                            message: `User ${ generateClient(clients[0]).fullname } has been deleted.`
-                        })
+                        Modification.insertMany(modification)
+                            .then(newModification => {
+                                res.status(statusCodes.success).json({
+                                    message: `User ${ generateClient(clients[0]).fullname } has been deleted.`,
+                                    modification: generateModification(newModification[0])
+                                });
+                            })
+                            .catch(error => {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal,
+                                    error
+                                });
+                            })
                     })
                     .catch(error => {
                         if(error.kind === ErrorKind.ID) {
                             res.status(statusCodes.user_error).json({
-                                message: errorMessages.invalid_id(req.params.id)
+                                message: errorMessages.invalid_id(id)
                             });
                         } else {
                             res.status(statusCodes.server_error).json({
@@ -357,13 +377,13 @@ exports.softDelete = (req, res) => {
                                 error
                             });
                         }
-                    })
+                    });
                 }
             })
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
@@ -380,12 +400,17 @@ exports.softDelete = (req, res) => {
 }
 
 exports.recover = (req, res) => {
-    if(req.params.id) {
-        Client.find({ _id: req.params.id })
+    const id = req.params.id;
+
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    if(id) {
+        Client.find({ _id: id })
             .then(clients => {
                 if(clients.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', req.params.id)
+                        message: errorMessages.not_exist('Client', id)
                     });
                 } else {
                     if(clients[0].active) {
@@ -393,20 +418,37 @@ exports.recover = (req, res) => {
                             message: 'User is already active.'
                         });
                     } else {
+                        const modification = generateModificationForDb({
+                            cluster: 'Client',
+                            id,
+                            modification: ModificationType.RECOVERED_CLIENT,
+                            modified_by: generateCleanModel(loggedInUser)
+                        });
+
                         Client.updateOne(
-                            { _id: req.params.id },
+                            { _id: id },
                             { active: true }
                         )
                         .then(_ => {
-                            res.status(statusCodes.success).json({
-                                message: `User ${ generateClient(clients[0]).fullname } has been recovered.`,
-                                user: generateClient(clients[0])
-                            });
+                            Modification.insertMany(modification)
+                                .then(newModification => {
+                                    res.status(statusCodes.success).json({
+                                        message: `User ${ generateClient(clients[0]).fullname } has been recovered.`,
+                                        user: generateClient(clients[0]),
+                                        modification: generateModification(newModification[0])
+                                    });
+                                })
+                                .catch(error => {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal,
+                                        error
+                                    });
+                                })
                         })
                         .catch(error => {
                             if(error.kind === ErrorKind.ID) {
                                 res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(req.params.id)
+                                    message: errorMessages.invalid_id(id)
                                 });
                             } else {
                                 res.status(statusCodes.server_error).json({
@@ -421,7 +463,7 @@ exports.recover = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
@@ -438,15 +480,17 @@ exports.recover = (req, res) => {
 }
 
 exports.delete = (req, res) => {
-    if(req.params.id) {
-        Client.find({ _id: req.params.id })
+    const id = req.params.id;
+
+    if(id) {
+        Client.find({ _id: id })
             .then(clients => {
                 if(clients.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', req.params.id)
+                        message: errorMessages.not_exist('Client', id)
                     });
                 } else {
-                    Client.deleteOne({ _id: req.params.id })
+                    Client.deleteOne({ _id: id })
                         .then(_ => {
                             res.status(statusCodes.success).json({
                                 message: `User ${ generateClient(clients[0]).fullname } has been deleted permanently.`
@@ -455,7 +499,7 @@ exports.delete = (req, res) => {
                         .catch(error => {
                             if(error.kind === ErrorKind.ID) {
                                 res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(req.params.id)
+                                    message: errorMessages.invalid_id(id)
                                 });
                             } else {
                                 res.status(statusCodes.server_error).json({
@@ -469,7 +513,7 @@ exports.delete = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
