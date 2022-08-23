@@ -59,20 +59,14 @@ exports.getSingle = (req, res) => {
     const id = req.params.id;
 
     if(id) {
-        Album.find({ _id: id })
+        Album.find({ _id: id, active: true })
             .then(albums => {
                 if(albums.length === 0) {
                     res.status(statusCodes.user_error).json({
                         message: errorMessages.not_exist('Album', id)
                     });
                 } else {
-                    if(!albums[0].active) {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.not_exist('Album', id)
-                        });
-                    } else {
-                        res.status(statusCodes.success).send(generateAlbum(albums[0]));
-                    }
+                    res.status(statusCodes.success).send(generateAlbum(albums[0]));
                 }
             })
             .catch(error => {
@@ -353,62 +347,56 @@ exports.edit = (req, res) => {
     const loggedInUser = parseJwt(token);
 
     if(id) {
-        Album.find({ _id: id })
+        Album.find({ _id: id, active: true })
             .then(albums => {
                 if(albums.length === 0) {
                     res.status(statusCodes.user_error).json({
                         message: errorMessages.not_exist('Album', id)
                     });
                 } else {
-                    if(!albums[0].active) {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.not_exist('Album', id)
-                        });
-                    } else {
-                        const data = { 
-                            ...req.body,
+                    const data = { 
+                        ...req.body,
 
-                            modified_date: generateDate(),
-                            modified_by_id: loggedInUser._id,
-                            modified_by: JSON.stringify(generateCleanModel(loggedInUser))
-                        };
+                        modified_date: generateDate(),
+                        modified_by_id: loggedInUser._id,
+                        modified_by: JSON.stringify(generateCleanModel(loggedInUser))
+                    };
 
-                        Album.updateOne(
-                            { _id: id },
-                            { ...data }
-                        )
-                        .then(_ => {
-                            Album.find({ _id: id })
-                                .then(newAlbum => {
-                                    res.status(statusCodes.success).json({
-                                        message: 'Album has been updated.',
-                                        album: generateAlbum(newAlbum[0])
+                    Album.updateOne(
+                        { _id: id },
+                        { ...data }
+                    )
+                    .then(_ => {
+                        Album.find({ _id: id })
+                            .then(newAlbum => {
+                                res.status(statusCodes.success).json({
+                                    message: 'Album has been updated.',
+                                    album: generateAlbum(newAlbum[0])
+                                });
+                            })
+                            .catch(error => {
+                                if(error.kind === ErrorKind.ID) {
+                                    res.status(statusCodes.user_error).json({
+                                        message: errorMessages.invalid_id(req.params.id)
                                     });
-                                })
-                                .catch(error => {
-                                    if(error.kind === ErrorKind.ID) {
-                                        res.status(statusCodes.user_error).json({
-                                            message: errorMessages.invalid_id(req.params.id)
-                                        });
-                                    } else {
-                                        res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal
-                                        });
-                                    }
-                                })
-                        })
-                        .catch(error => {
-                            if(error.kind === ErrorKind.ID) {
-                                res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(req.params.id)
-                                });
-                            } else {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal
-                                });
-                            }
-                        })
-                    }
+                                } else {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal
+                                    });
+                                }
+                            })
+                    })
+                    .catch(error => {
+                        if(error.kind === ErrorKind.ID) {
+                            res.status(statusCodes.user_error).json({
+                                message: errorMessages.invalid_id(req.params.id)
+                            });
+                        } else {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal
+                            });
+                        }
+                    })
                 }
             })
             .catch(error => {
@@ -447,65 +435,59 @@ exports.images = (req, res) => {
                             message: errorMessages.not_exist('Album', id)
                         });
                     } else {
-                        if(albums[0].active) {
-                            Album.updateOne(
-                                { _id: id },
-                                { 
-                                    images: images,
-                                    images_count: splittedImages.length,
+                        Album.updateOne(
+                            { _id: id, active: true },
+                            { 
+                                images: images,
+                                images_count: splittedImages.length,
 
-                                    modified_date: generateDate(),
-                                    modified_by_id: loggedInUser._id,
-                                    modified_by: JSON.stringify(generateCleanModel(loggedInUser))
-                                }
-                            )
-                                .then(_ => {
-                                    Album.find({ _id: id })
-                                        .then(newAlbum => {
-                                            res.status(statusCodes.success).json({
-                                                message: 'Images have been updated.',
-                                                album: generateAlbum(newAlbum[0])
+                                modified_date: generateDate(),
+                                modified_by_id: loggedInUser._id,
+                                modified_by: JSON.stringify(generateCleanModel(loggedInUser))
+                            }
+                        )
+                            .then(_ => {
+                                Album.find({ _id: id })
+                                    .then(newAlbum => {
+                                        res.status(statusCodes.success).json({
+                                            message: 'Images have been updated.',
+                                            album: generateAlbum(newAlbum[0])
+                                        });
+                                    })
+                                    .catch(error => {
+                                        console.log(error);
+                                        if(error.kind === ErrorKind.ID) {
+                                            res.status(statusCodes.user_error).json({
+                                                message: errorMessages.invalid_id(id)
                                             });
-                                        })
-                                        .catch(error => {
-                                            console.log(error);
-                                            if(error.kind === ErrorKind.ID) {
-                                                res.status(statusCodes.user_error).json({
-                                                    message: errorMessages.invalid_id(req.params.id)
-                                                });
-                                            } else {
-                                                res.status(statusCodes.server_error).json({
-                                                    message: errorMessages.internal,
-                                                    error
-                                                });
-                                            }
-                                        })
-                                })
-                                .catch(error => {
-                                    console.log(error);
-                                    if(error.kind === ErrorKind.ID) {
-                                        res.status(statusCodes.user_error).json({
-                                            message: errorMessages.invalid_id(req.params.id)
-                                        });
-                                    } else {
-                                        res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal,
-                                            error
-                                        });
-                                    }
-                                })
-                        } else {
-                            res.status(statusCodes.user_error).then({
-                                message: errorMessages.not_exist('Album', id)
-                            });
-                        }
+                                        } else {
+                                            res.status(statusCodes.server_error).json({
+                                                message: errorMessages.internal,
+                                                error
+                                            });
+                                        }
+                                    })
+                            })
+                            .catch(error => {
+                                console.log(error);
+                                if(error.kind === ErrorKind.ID) {
+                                    res.status(statusCodes.user_error).json({
+                                        message: errorMessages.invalid_id(id)
+                                    });
+                                } else {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal,
+                                        error
+                                    });
+                                }
+                            })
                     }
                 })
                 .catch(error => {
                     console.log(error);
                     if(error.kind === ErrorKind.ID) {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.invalid_id(req.params.id)
+                            message: errorMessages.invalid_id(id)
                         });
                     } else {
                         res.status(statusCodes.server_error).json({
@@ -530,66 +512,60 @@ exports.selectedImages = (req, res) => {
     const id = req.params.id;
 
     if(id) {
-        Album.find({ _id: id })
+        Album.find({ _id: id, active: true })
             .then(albums => {
                 if(albums.length === 0) {
                     res.status(statusCodes.user_error).json({
                         message: errorMessages.not_exist('Album', id)
                     });
                 } else {
-                    if(albums[0].active) {
-                        const selectedImages = req.body.selected_images;
-                        const splittedImages = selectedImages.split(',');
+                    const selectedImages = req.body.selected_images;
+                    const splittedImages = selectedImages.split(',');
 
-                        if(selectedImages) {
-                            Album.updateOne(
-                                { _id: id },
-                                { 
-                                    selected_images: selectedImages,
-                                    selected_images_count: splittedImages.length
-                                }
-                            )
-                            .then(_ => {
-                                Album.find({ _id: id })
-                                    .then(newAlbum => {
-                                        res.status(statusCodes.success).json({
-                                            message: 'Images have been selected.',
-                                            album: generateAlbum(newAlbum[0])
+                    if(selectedImages) {
+                        Album.updateOne(
+                            { _id: id },
+                            { 
+                                selected_images: selectedImages,
+                                selected_images_count: splittedImages.length
+                            }
+                        )
+                        .then(_ => {
+                            Album.find({ _id: id })
+                                .then(newAlbum => {
+                                    res.status(statusCodes.success).json({
+                                        message: 'Images have been selected.',
+                                        album: generateAlbum(newAlbum[0])
+                                    });
+                                })
+                                .catch(error => {
+                                    if(error.kind === ErrorKind.ID) {
+                                        res.status(statusCodes.user_error).json({
+                                            message: errorMessages.invalid_id(id)
                                         });
-                                    })
-                                    .catch(error => {
-                                        if(error.kind === ErrorKind.ID) {
-                                            res.status(statusCodes.user_error).json({
-                                                message: errorMessages.invalid_id(req.params.id)
-                                            });
-                                        } else {
-                                            res.status(statusCodes.server_error).json({
-                                                message: errorMessages.internal,
-                                                error
-                                            });
-                                        }
-                                    })
-                            })
-                            .catch(error => {
-                                if(error.kind === ErrorKind.ID) {
-                                    res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id(req.params.id)
-                                    });
-                                } else {
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal,
-                                        error
-                                    });
-                                }
-                            })
-                        } else {
-                            res.status(statusCodes.user_error).json({
-                                message: 'Please select images.'
-                            });
-                        }
+                                    } else {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal,
+                                            error
+                                        });
+                                    }
+                                })
+                        })
+                        .catch(error => {
+                            if(error.kind === ErrorKind.ID) {
+                                res.status(statusCodes.user_error).json({
+                                    message: errorMessages.invalid_id(id)
+                                });
+                            } else {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal,
+                                    error
+                                });
+                            }
+                        })
                     } else {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.not_exist('Album', id)
+                            message: 'Please select images.'
                         });
                     }
                 }
@@ -598,7 +574,7 @@ exports.selectedImages = (req, res) => {
                 console.log(error);
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
@@ -660,7 +636,7 @@ exports.assignUser = (req, res) => {
                                                 console.log(error);
                                                 if(error.kind === ErrorKind.ID) {
                                                     res.status(statusCodes.user_error).json({
-                                                        message: errorMessages.invalid_id(req.params.id)
+                                                        message: errorMessages.invalid_id(id)
                                                     });
                                                 } else {
                                                     res.status(statusCodes.server_error).json({
@@ -674,7 +650,7 @@ exports.assignUser = (req, res) => {
                                         console.log(error);
                                         if(error.kind === ErrorKind.ID) {
                                             res.status(statusCodes.user_error).json({
-                                                message: errorMessages.invalid_id(req.params.id)
+                                                message: errorMessages.invalid_id(id)
                                             });
                                         } else {
                                             res.status(statusCodes.server_error).json({
@@ -689,7 +665,7 @@ exports.assignUser = (req, res) => {
                                 console.log(error);
                                 if(error.kind === ErrorKind.ID) {
                                     res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id(req.params.id)
+                                        message: errorMessages.invalid_id(id)
                                     });
                                 } else {
                                     res.status(statusCodes.server_error).json({
@@ -709,7 +685,7 @@ exports.assignUser = (req, res) => {
                 console.log(error);
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({

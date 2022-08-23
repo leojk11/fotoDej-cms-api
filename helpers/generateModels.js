@@ -1,3 +1,38 @@
+const { generateDate, generateTime } = require('./timeDate');
+
+exports.generateModificationForDb = (info) => {
+    const newModification = {
+        cluster: info.cluster,
+        modified_element_id: info.id,
+
+        modification: info.modification,
+
+        modified_date: generateDate(),
+        modified_time: generateTime(),
+
+        modified_by: JSON.stringify(info.modified_by),
+        modified_by_id: info.modified_by.id
+    };
+
+    return newModification;
+}
+exports.generateModification = (info) => {
+    const newModification = {
+        id: info._id,
+        cluster: info.cluster,
+        modification: info.modification,
+        modified_element_id: info.modified_element_id,
+
+        modified_date: info.modified_date,
+        modified_time: info.modified_time,
+
+        modified_by: JSON.parse(info.modified_by),
+        modified_by_id: info.modified_by_id
+    };
+
+    return newModification;
+}
+
 exports.generateUser = (user) => {
     const newUser = {
         id: user._id,
@@ -22,7 +57,7 @@ exports.generateUser = (user) => {
         created_by: user.created_by,
 
         modified_date: user.modified_date,
-        modified_time: user.modified_time,
+        modified_by_id: user.modified_by_id,
 
         active: user.active
     };
@@ -119,4 +154,6 @@ exports.generateAlbum = (album) => {
 
     return newAlbum;
 }
+
+
 

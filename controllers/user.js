@@ -1,5 +1,6 @@
 const User = require('../db/models/user');
 const Admin = require('../db/models/admin');
+const Modification = require('../db/models/modification');
 
 const bcrypt = require('bcrypt');
 
@@ -9,7 +10,13 @@ const { ErrorKind } = require('../enums/errorKind');
 const { generateDate, generateTime } = require('../helpers/timeDate');
 const { AccountStatus, OnlineStatus } = require('../enums/accountStatus');
 const { UserRole } = require('../enums/userRole');
-const { generateUser } = require('../helpers/generateModels');
+const { 
+    generateUser, 
+    generateCleanModel,
+    generateModificationForDb 
+} = require('../helpers/generateModels');
+const { parseJwt } = require('../middlewares/common');
+const { ModificationType } = require('../enums/modificationType');
 
 exports.getAll = (req, res) => {
 
@@ -175,6 +182,9 @@ exports.addNew = (req, res) => {
 exports.edit = (req, res) => {
     const id = req.params.id;
 
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
     if(id) {
         User.find({ _id: id })
             .then(users => {
@@ -183,7 +193,20 @@ exports.edit = (req, res) => {
                         message: errorMessages.not_exist('User', id)
                     });
                 } else {
-                    const data = { ...req.body };
+                    const modification = generateModificationForDb({
+                        cluster: 'User',
+                        id,
+                        modification: ModificationType.EDITED_USER,
+                        modified_by: generateCleanModel(loggedInUser)
+                    });
+
+                    const data = { 
+                        ...req.body,
+                        
+                        modified_date: modification.modified_date,
+                        modified_by_id: modification.modified_by_id,
+                        modified_by: modification.modified_by
+                    };
 
                     User.updateOne(
                         { _id: id },
@@ -194,12 +217,24 @@ exports.edit = (req, res) => {
                             .then(newUser => {
                                 const updatedUser = generateUser(newUser[0]);
 
-                                res.status(statusCodes.success).json({
-                                    message: `User ${ updatedUser.fullname } has been updated.`,
-                                    user: updatedUser
-                                });
+                                Modification.insertMany(modification)
+                                    .then(newModification => {
+                                        res.status(statusCodes.success).json({
+                                            message: `User ${ updatedUser.fullname } has been updated.`,
+                                            user: updatedUser,
+                                            modification: newModification[0]
+                                        });
+                                    })
+                                    .catch(error => {
+                                        console.log(error);
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal,
+                                            error
+                                        });
+                                    })
                             })
                             .catch(error => {
+                                console.log(error);
                                 if(error.kind === ErrorKind.ID) {
                                     res.status(statusCodes.user_error).json({
                                         message: errorMessages.invalid_id(req.params.id)
@@ -213,6 +248,7 @@ exports.edit = (req, res) => {
                             })
                     })
                     .catch(error => {
+                        console.log(error);
                         if(error.kind === ErrorKind.ID) {
                             res.status(statusCodes.user_error).json({
                                 message: errorMessages.invalid_id(req.params.id)
@@ -227,6 +263,7 @@ exports.edit = (req, res) => {
                 }
             })
             .catch(error => {
+                console.log(error);
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
                         message: errorMessages.invalid_id(req.params.id)

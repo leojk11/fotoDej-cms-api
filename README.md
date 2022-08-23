@@ -44,7 +44,7 @@ https://documenter.getpostman.com/view/14487622/VUjTmPW7
 - created_time: string
 - created_by: CleanUser
 - modified_date: string
-- modified_time: string
+- modified_by_id: string
 - modified_by: CleanUser
 - active: boolean
 - deleted_by_id: string

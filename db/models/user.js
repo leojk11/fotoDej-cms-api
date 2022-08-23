@@ -64,7 +64,7 @@ const userSchema = new Schema({
     modified_date: {
         type: String
     },
-    modified_time: {
+    modified_by_id: {
         type: String
     },
     modified_by: {
