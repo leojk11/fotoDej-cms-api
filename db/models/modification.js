@@ -10,6 +10,14 @@ const modificationSchema = new Schema({
     type: String,
     required: true
   },
+  modified_field: {
+    type: String,
+    required: true
+  },
+  before_modification_value: {
+    type: String,
+    required: true
+  },
   
   modification: {
     type: String,

@@ -1,13 +1,20 @@
 const Client = require('../db/models/client');
+const Modification = require('../db/models/modification');
 
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
-const { generateClient, generateCleanModel } = require('../helpers/generateModels');
+const { 
+    generateClient, 
+    generateCleanModel, 
+    generateModificationForDb,
+    generateModification 
+} = require('../helpers/generateModels');
 const { ErrorKind } = require('../enums/errorKind');
 const { AccountStatus } = require('../enums/accountStatus');
+const { ModificationType } = require('../enums/modificationType');
 const { generateDate, generateTime } = require('../helpers/timeDate');
 const { parseJwt } = require('../middlewares/common');
 
@@ -105,12 +112,14 @@ exports.getSoftDeletedClients = (req, res) => {
 }
 
 exports.getSingle = (req, res) => {
-    if(req.params.id) {
-        Client.find({ _id: req.params.id })
+    const id = req.params.id;
+
+    if(id) {
+        Client.find({ _id: id, active: true })
             .then(clients => {
                 if(clients.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', req.params.id)
+                        message: errorMessages.not_exist('Client', id)
                     });
                 } else {
                     res.status(statusCodes.success).send(generateClient(clients[0]));
@@ -119,7 +128,7 @@ exports.getSingle = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
@@ -217,40 +226,61 @@ exports.addNew = (req, res) => {
 }
 
 exports.edit = (req, res) => {
+    const id = req.params.id;
+    
     const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
 
-    if(req.params.id) {
-        const data = { 
-            ...req.body,
-            
-            modified_date: generateDate(),
-            modified_time: generateTime(),
-            modified_by: JSON.stringify(generateCleanModel(parseJwt(token)))
-        };
-
-        Client.find({ _id: req.params.id })
+    if(id) {
+        Client.find({ _id: id, active: true })
             .then(clients => {
                 if(clients.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', req.params.id)
+                        message: errorMessages.not_exist('Client', id)
                     });
                 } else {
+                    const modification = generateModificationForDb({
+                        cluster: 'Client',
+                        id,
+                        modification: ModificationType.EDITED_CLIENT,
+                        modified_by: generateCleanModel(loggedInUser)
+                    });
+
+                    const data = { 
+                        ...req.body,
+                        
+                        modified_date: modification.modified_date,
+                        modified_by: modification.modified_by,
+                        modified_by_id: modification.modified_by_id
+                    };
+
                     Client.updateOne(
-                        { _id: req.params.id },
+                        { _id: id },
                         { ...data }
                     )
                     .then(_ => {
-                        Client.find({ _id: req.params.id })
+                        Client.find({ _id: id })
                             .then(newClient => {
-                                res.status(statusCodes.success).json({
-                                    message: `User has been updated`,
-                                    user: generateClient(newClient[0])
-                                });
+                                Modification.insertMany(modification)
+                                    .then(newModification => {
+                                        res.status(statusCodes.success).json({
+                                            message: `User has been updated`,
+                                            user: generateClient(newClient[0]),
+                                            modification: generateModification(newModification[0])
+                                        });
+                                    })
+                                    .catch(error => {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal,
+                                            error
+                                        });
+                                    })
+
                             })
                             .catch(error => {
                                 if(error.kind === ErrorKind.ID) {
                                     res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id(req.params.id)
+                                        message: errorMessages.invalid_id(id)
                                     });
                                 } else {
                                     res.status(statusCodes.server_error).json({
@@ -263,7 +293,7 @@ exports.edit = (req, res) => {
                     .catch(error => {
                         if(error.kind === ErrorKind.ID) {
                             res.status(statusCodes.user_error).json({
-                                message: errorMessages.invalid_id(req.params.id)
+                                message: errorMessages.invalid_id(id)
                             });
                         } else {
                             res.status(statusCodes.server_error).json({
@@ -277,7 +307,7 @@ exports.edit = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({

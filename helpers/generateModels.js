@@ -88,7 +88,8 @@ exports.generateClient = (client) => {
         created_by: JSON.parse(client.created_by),
 
         modified_date: client.modified_date,
-        modified_time: client.modified_time,
+        // modified_time: client.modified_time,
+        modified_by_id: client.modified_by_id,
 
         account_status: client.account_status,
         active: client.active

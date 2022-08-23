@@ -58,6 +58,9 @@ const clientSchema = new Schema({
     modified_by: {
         type: String
     },
+    modified_by_id: {
+        type: String
+    },
 
     account_status: {
         type: String,
