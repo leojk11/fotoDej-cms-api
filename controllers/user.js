@@ -6,17 +6,20 @@ const bcrypt = require('bcrypt');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
-const { ErrorKind } = require('../enums/errorKind');
 const { generateDate, generateTime } = require('../helpers/timeDate');
-const { AccountStatus, OnlineStatus } = require('../enums/accountStatus');
-const { UserRole } = require('../enums/userRole');
 const { 
     generateUser, 
     generateCleanModel,
-    generateModificationForDb 
+    generateModificationForDb, 
+    generateModification
 } = require('../helpers/generateModels');
-const { parseJwt } = require('../middlewares/common');
+
+const { ErrorKind } = require('../enums/errorKind');
+const { AccountStatus, OnlineStatus } = require('../enums/accountStatus');
+const { UserRole } = require('../enums/userRole');
 const { ModificationType } = require('../enums/modificationType');
+
+const { parseJwt } = require('../middlewares/common');
 
 exports.getAll = (req, res) => {
 
@@ -65,12 +68,14 @@ exports.getAll = (req, res) => {
 }
 
 exports.getSingle = (req, res) => {
-    if(req.params.id) {
-        User.find({ _id: req.params.id })
+    const id = req.params.id;
+
+    if(id) {
+        User.find({ _id: id, active: true })
             .then(users => {
                 if(users.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('User', req.params.id)
+                        message: errorMessages.not_exist('User', id)
                     });
                 } else {
                     res.status(statusCodes.success).send(generateUser(users[0]));
@@ -79,7 +84,7 @@ exports.getSingle = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
@@ -283,41 +288,66 @@ exports.edit = (req, res) => {
 }
 
 exports.softDelete = (req, res) => {
-    if(req.params.id) {
-        User.find({ _id: req.params.id })
+    const id = req.params.id;
+    
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+    
+    if(id) {
+        User.find({ _id: id, active: true })
             .then(users => {
                 if(users.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('User', req.params.id)
+                        message: errorMessages.not_exist('User', id)
                     })
                 } else {
-                    User.updateOne(
-                        { _id: req.params.id },
-                        { active: false }
-                    )
-                    .then(_ => {
-                        res.status(statusCodes.success).json({
-                            message: `User ${ users[0].firstname } ${ users[0].lastname } has been deleted.`
-                        });
-                    })
-                    .catch(error => {
-                        if(error.kind === ErrorKind.ID) {
-                            res.status(statusCodes.user_error).json({
-                                message: errorMessages.invalid_id(req.params.id)
-                            });
-                        } else {
-                            res.status(statusCodes.server_error).json({
-                                message: errorMessages.internal,
-                                error
-                            });
-                        }
+                    const modification = generateModificationForDb({
+                        cluster: 'User',
+                        id,
+                        modification: ModificationType.SOFT_DELETED_USER,
+                        modified_by: generateCleanModel(loggedInUser)
                     });
+
+                    const data = {
+                        active: false,
+                        deleted_by_id: modification.modified_by_id,
+                        deleted_by: modification.modified_by
+                    };
+
+                    User.updateOne({ _id: id }, data)
+                        .then(_ => {
+                            Modification.insertMany(modification)
+                                .then(newModification => {
+                                    res.status(statusCodes.success).json({
+                                        message: `User ${ users[0].firstname } ${ users[0].lastname } has been deleted.`,
+                                        modification: generateModification(newModification[0])
+                                    });
+                                })
+                                .catch(error => {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal,
+                                        error
+                                    });
+                                });
+                        })
+                        .catch(error => {
+                            if(error.kind === ErrorKind.ID) {
+                                res.status(statusCodes.user_error).json({
+                                    message: errorMessages.invalid_id(id)
+                                });
+                            } else {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal,
+                                    error
+                                });
+                            }
+                        });
                 }
             })
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
@@ -334,12 +364,17 @@ exports.softDelete = (req, res) => {
 }
 
 exports.recover = (req, res) => {
-    if(req.params.id) {
-        User.find({ _id: req.params.id })
+    const id = req.params.id;
+
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    if(id) {
+        User.find({ _id: id })
             .then(users => {
                 if(users.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('User', req.params.id)
+                        message: errorMessages.not_exist('User', id)
                     });
                 } else {
                     if(users[0].active) {
@@ -347,35 +382,56 @@ exports.recover = (req, res) => {
                             message: 'User is already active.'
                         });
                     } else {
-                        User.updateOne(
-                            { _id: req.params.id },
-                            { active: true }
-                        )
-                        .then(_ => {
-                            res.status(statusCodes.success).json({
-                                message: `User ${ generateUser(users[0]).fullname } has been recovered.`,
-                                user: generateUser(users[0])
-                            })
-                        })
-                        .catch(error => {
-                            if(error.kind === ErrorKind.ID) {
-                                res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(req.params.id)
-                                });
-                            } else {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
-                                    error
-                                });
-                            }
+                        const modification = generateModificationForDb({
+                            cluster: 'User',
+                            id,
+                            modification: ModificationType.RECOVERED_USER,
+                            modified_by: generateCleanModel(loggedInUser)
                         });
+
+                        const data = {
+                            active: true,
+
+                            deleted_by: '',
+                            deleted_by_id: ''
+                        };
+
+                        User.updateOne({ _id: id }, data)
+                            .then(_ => {
+                                Modification.insertMany(modification)
+                                    .then(newModification => {
+                                        res.status(statusCodes.success).json({
+                                            message: `User ${ generateUser(users[0]).fullname } has been recovered.`,
+                                            user: generateUser(users[0]),
+                                            modification: generateModification(newModification[0])
+                                        });
+                                    })
+                                    .catch(error => {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal,
+                                            error
+                                        });
+                                    })
+                            })
+                            .catch(error => {
+                                if(error.kind === ErrorKind.ID) {
+                                    res.status(statusCodes.user_error).json({
+                                        message: errorMessages.invalid_id(id)
+                                    });
+                                } else {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal,
+                                        error
+                                    });
+                                }
+                            });
                     }
                 }
             })
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
@@ -392,15 +448,17 @@ exports.recover = (req, res) => {
 }
 
 exports.delete = (req, res) => {
-    if(req.params.id) {
-        User.find({ _id: req.params.id })
+    const id = req.params.id;
+
+    if(id) {
+        User.find({ _id: id })
             .then(users => {
                 if(users.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('User', req.params.id)
-                    })
+                        message: errorMessages.not_exist('User', id)
+                    });
                 } else {
-                    User.deleteOne({ _id: req.params.id })
+                    User.deleteOne({ _id: id })
                         .then(_ => {
                             res.status(statusCodes.success).json({
                                 message: 'User has been deleted permanently.'
@@ -409,7 +467,7 @@ exports.delete = (req, res) => {
                         .catch(error => {
                             if(error.kind === ErrorKind.ID) {
                                 res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(req.params.id)
+                                    message: errorMessages.invalid_id(id)
                                 });
                             } else {
                                 res.status(statusCodes.server_error).json({
@@ -423,7 +481,7 @@ exports.delete = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
