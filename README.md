@@ -91,3 +91,13 @@ https://documenter.getpostman.com/view/14487622/VUjTmPW7
 - active: boolean
 - deleted_by_id: string
 - deleted_by: CleanUser
+
+## Modification
+- id: string
+- cluster: string
+- modification: string
+- modified_element_id: string
+- modified_date: string
+- modified_time: string
+- modified_by: CleanModel
+- modified_by_id: string
