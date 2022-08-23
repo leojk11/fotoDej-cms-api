@@ -1,11 +1,20 @@
 const Album = require('../db/models/album');
 const Client = require('../db/models/client');
+const Modification = require('../db/models/modification');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
-const { generateAlbum, generateCleanModel } = require('../helpers/generateModels');
-const { ErrorKind } = require('../enums/errorKind');
+const { 
+    generateAlbum, 
+    generateCleanModel,
+    generateModification,
+    generateModificationForDb
+} = require('../helpers/generateModels');
 const { generateDate } = require('../helpers/timeDate');
+
+const { ErrorKind } = require('../enums/errorKind');
+const { ModificationType } = require('../enums/modificationType');
+
 const { parseJwt } = require('../middlewares/common');
 
 // get all
@@ -354,11 +363,18 @@ exports.edit = (req, res) => {
                         message: errorMessages.not_exist('Album', id)
                     });
                 } else {
+                    const modification = generateModificationForDb({
+                        cluster: 'Album',
+                        id,
+                        modification: ModificationType.EDITED_ALBUM,
+                        modified_by: generateCleanModel(loggedInUser)
+                    });
+
                     const data = { 
                         ...req.body,
 
-                        modified_date: generateDate(),
-                        modified_by_id: loggedInUser._id,
+                        modified_date: modification.modified_date,
+                        modified_by_id: modification.modified_by_id,
                         modified_by: JSON.stringify(generateCleanModel(loggedInUser))
                     };
 
@@ -369,10 +385,19 @@ exports.edit = (req, res) => {
                     .then(_ => {
                         Album.find({ _id: id })
                             .then(newAlbum => {
-                                res.status(statusCodes.success).json({
-                                    message: 'Album has been updated.',
-                                    album: generateAlbum(newAlbum[0])
-                                });
+                                Modification.insertMany(modification)
+                                    .then(newModification => {
+                                        res.status(statusCodes.success).json({
+                                            message: 'Album has been updated.',
+                                            album: generateAlbum(newAlbum[0]),
+                                            modification: generateModification(newModification[0])
+                                        });
+                                    })
+                                    .catch(error => {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal
+                                        });
+                                    })
                             })
                             .catch(error => {
                                 if(error.kind === ErrorKind.ID) {
@@ -428,31 +453,48 @@ exports.images = (req, res) => {
 
     if(id) {
         if(images) {
-            Album.find({ _id: id })
+            Album.find({ _id: id, active: true })
                 .then(albums => {
                     if(albums.length === 0) {
                         res.status(statusCodes.user_error).then({
                             message: errorMessages.not_exist('Album', id)
                         });
                     } else {
+                        const modification = generateModificationForDb({
+                            cluster: 'Album',
+                            id,
+                            modification: ModificationType.ADDED_IMAGES,
+                            modified_by: generateCleanModel(loggedInUser)
+                        });
+
                         Album.updateOne(
-                            { _id: id, active: true },
+                            { _id: id },
                             { 
                                 images: images,
                                 images_count: splittedImages.length,
 
-                                modified_date: generateDate(),
-                                modified_by_id: loggedInUser._id,
+                                modified_date: modification.modified_date,
+                                modified_by_id: modification.modified_by_id,
                                 modified_by: JSON.stringify(generateCleanModel(loggedInUser))
                             }
                         )
                             .then(_ => {
                                 Album.find({ _id: id })
                                     .then(newAlbum => {
-                                        res.status(statusCodes.success).json({
-                                            message: 'Images have been updated.',
-                                            album: generateAlbum(newAlbum[0])
-                                        });
+                                        Modification.insertMany(modification)
+                                            .then(newModification => {
+                                                res.status(statusCodes.success).json({
+                                                    message: 'Images have been updated.',
+                                                    album: generateAlbum(newAlbum[0]),
+                                                    modification: generateModification(newModification[0])
+                                                });
+                                            })
+                                            .catch(error => {
+                                                res.status(statusCodes.server_error).json({
+                                                    message: errorMessages.internal,
+                                                    error
+                                                });
+                                            })
                                     })
                                     .catch(error => {
                                         console.log(error);
@@ -613,6 +655,13 @@ exports.assignUser = (req, res) => {
                                         message: errorMessages.not_exist('User', id)
                                     });
                                 } else {
+                                    const modification = generateModificationForDb({
+                                        cluster: 'Album',
+                                        id,
+                                        modification: ModificationType.ADDED_IMAGES,
+                                        modified_by: generateCleanModel(loggedInUser)
+                                    });
+
                                     Album.updateOne(
                                         { _id: id },
                                         { 
@@ -627,10 +676,20 @@ exports.assignUser = (req, res) => {
                                     .then(_ => {
                                         Album.find({ _id: id })
                                             .then(newAlbum => {
-                                                res.status(statusCodes.success).json({
-                                                    message: 'User has been assigned.',
-                                                    album: generateAlbum(newAlbum[0])
-                                                });
+                                                Modification.insertMany(modification)
+                                                    .then(newModification => {
+                                                        res.status(statusCodes.success).json({
+                                                            message: 'User has been assigned.',
+                                                            album: generateAlbum(newAlbum[0]),
+                                                            modification: generateModification(newModification[0])
+                                                        });
+                                                    })
+                                                    .catch(error => {
+                                                        res.status(statusCodes.server_error).json({
+                                                            message: errorMessages.internal,
+                                                            error
+                                                        });
+                                                    })
                                             })
                                             .catch(error => {
                                                 console.log(error);

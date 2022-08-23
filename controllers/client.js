@@ -198,7 +198,7 @@ exports.addNew = (req, res) => {
                             Client.find({ email: data.email })
                                 .then(newClient => {
                                     res.status(statusCodes.success).json({
-                                        message: 'Client has been added',
+                                        message: 'Client has been added.',
                                         client: generateClient(newClient[0])
                                     });
                                 })
