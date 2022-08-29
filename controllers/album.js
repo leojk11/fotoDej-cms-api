@@ -658,7 +658,7 @@ exports.assignUser = (req, res) => {
                                     const modification = generateModificationForDb({
                                         cluster: 'Album',
                                         id,
-                                        modification: ModificationType.ADDED_IMAGES,
+                                        modification: ModificationType.ASSIGNED_ALBUM,
                                         modified_by: generateCleanModel(loggedInUser)
                                     });
 
