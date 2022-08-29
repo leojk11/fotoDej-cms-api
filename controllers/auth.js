@@ -13,7 +13,7 @@ exports.adminLogin = (req, res) => {
 
     if(data.email === '' || !data.email) {
         res.status(statusCodes.user_error).json({
-            mesasge: errorMessages.please_enter('email')
+            message: errorMessages.please_enter('email')
         });
     } else if(data.password === '' || !data.password) {
         res.status(statusCodes.user_error).json({
@@ -94,7 +94,7 @@ exports.clientLogin = (req, res) => {
 
     if(data.email === '' || !data.email) {
         res.status(statusCodes.user_error).json({
-            mesasge: errorMessages.please_enter('email')
+            message: errorMessages.please_enter('email')
         });
     } else if(data.password === '' || !data.password) {
         res.status(statusCodes.user_error).json({
