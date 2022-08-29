@@ -122,6 +122,7 @@ exports.generateCleanModel = (user) => {
 exports.generateAlbum = (album) => {
     const newAlbum = {
         id: album._id,
+        title: album.title,
         images: album.images,
         images_count: album.images_count,
         selected_images: album.selected_images,
