@@ -6,6 +6,10 @@ const mainRouter = express();
 const authRoutes = require('../routes/auth');
 mainRouter.use('/auth', authRoutes);
 
+// images routes
+const imageRoutes = require('../routes/images');
+mainRouter.use('/images', imageRoutes);
+
 const userRoutes = require('../routes/user');
 const adminRoutes = require('../routes/admin');
 const clientRoutes = require('../routes/client');
