@@ -6,6 +6,10 @@ const albumSchema = new Schema({
         type: String,
         required: true
     },
+    date: {
+        type: String,
+        required: true
+    },
 
     images: {
         type: String

@@ -331,6 +331,10 @@ exports.addNew = (req, res) => {
         res.status(statusCodes.user_error).json({
             message: errorMessages.required_field('Title')
         });
+    } else if(data.date === '' || !data.date) {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.required_field('Date')
+        });
     } else {
         Album.insertMany(data)
             .then(addNewRes => {

@@ -123,6 +123,7 @@ exports.generateAlbum = (album) => {
     const newAlbum = {
         id: album._id,
         title: album.title,
+        date: album.date,
         images: album.images,
         images_count: album.images_count,
         selected_images: album.selected_images,
