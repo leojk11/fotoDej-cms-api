@@ -468,7 +468,9 @@ exports.images = (req, res) => {
                             cluster: 'Album',
                             id,
                             modification: ModificationType.ADDED_IMAGES,
-                            modified_by: generateCleanModel(loggedInUser)
+                            modified_by: generateCleanModel(loggedInUser),
+                            before_modification_value: JSON.stringify(albums[0]),
+                            modified_field: 'images'
                         });
 
                         Album.updateOne(

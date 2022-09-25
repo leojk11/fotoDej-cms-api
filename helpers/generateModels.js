@@ -124,7 +124,6 @@ exports.generateAlbum = (album) => {
         id: album._id,
         title: album.title,
         date: album.date,
-        images: album.images,
         images_count: album.images_count,
         selected_images: album.selected_images,
         selected_images_count: album.selected_images_count,
@@ -137,7 +136,19 @@ exports.generateAlbum = (album) => {
         modified_by_id: album.modified_by_id,
         active: album.active,
         deleted_by_id: album.deleted_by_id
-    };  
+    };
+
+    if(album.images) {
+        if(album.images.split(',').length > 1) {
+            newAlbum['images'] = album.images.split(',');
+        } else {
+            const arr = [];
+            arr.push(album.images);
+
+            newAlbum['images'] = arr;
+        }
+    }
+
 
     if(album.assigned_to) {
         newAlbum['assigned_to'] = JSON.parse(album.assigned_to);
