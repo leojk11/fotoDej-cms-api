@@ -28,28 +28,18 @@ exports.uploadImagesV2 = (req, res) => {
     });
   } else {
     const file = req.files.images;
-    const data = [];
-  
-    function move(image) {
-        try { image.mv('./images/' + image.name); }
-        catch (e) {
+
+      try { file.mv('./images/' + file.name).then(); }
+      catch (e) {
           console.log(e);
-            return res.send({
-                success: false,
-                message: 'upload error',
-                error: e
-            });
-        }
-        
-        data.push({
-            name: image.name,
-            mimeType: image.mimetype,
-            size: image.size
-        });
-    }
-  
-    Array.isArray(file) ? file.forEach((file) => move(file)) : move(file);
-    return res.send({ success: true, message: 'uploaded successfully', data });
+          return res.send({
+              success: false,
+              message: 'upload error',
+              error: e
+          });
+      }
+
+    res.status(200).json({ success: true, message: 'uploaded successfully' });
   }
 }
 
