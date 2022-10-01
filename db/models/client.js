@@ -71,8 +71,7 @@ const clientSchema = new Schema({
         required: true
     },
     deleted_by_id: {
-        type: String,
-        required: true
+        type: String
     },
     deleted_by: {
         type: String

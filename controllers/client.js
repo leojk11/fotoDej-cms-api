@@ -203,6 +203,7 @@ exports.addNew = (req, res) => {
                                     });
                                 })
                                 .catch(error => {
+                                    console.log(error);
                                     res.status(statusCodes.server_error).json({
                                         message: errorMessages.internal,
                                         error
@@ -210,6 +211,7 @@ exports.addNew = (req, res) => {
                                 })
                         })
                         .catch(error => {
+                            console.log(error);
                             res.status(statusCodes.server_error).json({
                                 message: errorMessages.internal,
                                 error
@@ -218,6 +220,7 @@ exports.addNew = (req, res) => {
                 }
             })
             .catch(error => {
+                console.log(error);
                 res.status(statusCodes.server_error).json({
                     message: errorMessages.internal,
                     error
@@ -263,11 +266,10 @@ exports.edit = (req, res) => {
                         Client.find({ _id: id })
                             .then(newClient => {
                                 Modification.insertMany(modification)
-                                    .then(newModification => {
+                                    .then(() => {
                                         res.status(statusCodes.success).json({
                                             message: `User has been updated`,
-                                            user: generateClient(newClient[0]),
-                                            modification: generateModification(newModification[0])
+                                            client: generateClient(newClient[0])
                                         });
                                     })
                                     .catch(error => {

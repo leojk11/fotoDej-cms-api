@@ -78,6 +78,7 @@ exports.generateClient = (client) => {
 
         phone_number: client.phone_number,
         email: client.email,
+        username: client.username,
 
         profile_image: client.profile_image,
 
@@ -154,7 +155,7 @@ exports.generateAlbum = (album) => {
         newAlbum['assigned_to'] = JSON.parse(album.assigned_to);
     }
     if(album.assigned_by) {
-        newAlbum['assigned_by'] = JSON.parase(album.assigned_by);
+        newAlbum['assigned_by'] = JSON.parse(album.assigned_by);
     }
     if(album.created_by) {
         newAlbum['created_by'] = JSON.parse(album.created_by);
