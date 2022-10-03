@@ -336,20 +336,48 @@ exports.addNew = (req, res) => {
             message: errorMessages.required_field('Date')
         });
     } else {
-        Album.insertMany(data)
-            .then(addNewRes => {
-                res.status(statusCodes.success).json({
-                    message: 'Album has been created.',
-                    album: generateAlbum(addNewRes[0])
-                });
-            })
-            .catch(error => {
-                console.log(error)
-                res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal,
-                    error
-                });
-            })
+        if (data.assigned_to_id) {
+            Client.find({  _id: data.assigned_to_id })
+                .then(clients => {
+                    if (clients.length === 0) {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.not_exist('Client', data.assigned_to_id)
+                        });
+                    } else {
+                        data['assigned_to'] = JSON.stringify(generateCleanModel(clients[0]));
+
+                        Album.insertMany(data)
+                            .then(addNewRes => {
+                                res.status(statusCodes.success).json({
+                                    message: 'Album has been created.',
+                                    album: generateAlbum(addNewRes[0])
+                                });
+                            })
+                            .catch(error => {
+                                console.log(error)
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal,
+                                    error
+                                });
+                            })
+                    }
+                })
+        } else {
+            Album.insertMany(data)
+                .then(addNewRes => {
+                    res.status(statusCodes.success).json({
+                        message: 'Album has been created.',
+                        album: generateAlbum(addNewRes[0])
+                    });
+                })
+                .catch(error => {
+                    console.log(error)
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                })
+        }
     }
 }
 // edit
