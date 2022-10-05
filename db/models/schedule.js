@@ -6,33 +6,18 @@ const scheduleSchema = new Schema({
     type: String,
     required: true
   },
+  description: {
+    type: String
+  },
   date: {
     type: String,
     required: true
   },
   time: {
     type: String,
-    required: true
   },
 
   user_id: {
-    type: String,
-    required: true
-  },
-
-  created_date: {
-    type: String,
-    required: true
-  },
-  created_time: {
-    type: String,
-    required: true
-  },
-  created_by_id: {
-    type: String,
-    required: true
-  },
-  created_by: {
     type: String,
     required: true
   }

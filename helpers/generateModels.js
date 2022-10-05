@@ -170,5 +170,18 @@ exports.generateAlbum = (album) => {
     return newAlbum;
 }
 
+exports.generateSchedule = (schedule) => {
+    const newSchedule = {
+        id: schedule.id,
+        title: schedule.title,
+        description: schedule.description,
+        date: schedule.date,
+        time: schedule.time,
+        user_id: schedule.user_id
+    };
+
+    return newSchedule;
+}
+
 
 

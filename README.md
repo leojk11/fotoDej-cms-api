@@ -102,3 +102,16 @@ https://documenter.getpostman.com/view/14487622/VUjTmPW7
 - modified_time: string
 - modified_by: CleanModel
 - modified_by_id: string
+
+## Image
+- id: string
+- name: string
+- album_id: string
+
+## Schedule
+- id: string
+- title: string
+- description: string
+- date: string
+- time: string
+- user_id: string
