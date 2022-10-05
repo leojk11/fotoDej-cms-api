@@ -50,6 +50,7 @@ exports.getAll = (req, res) => {
                     });
                 })
                 .catch(error => {
+                    console.log(error);
                     res.status(statusCodes.server_error).json({
                         message: errorMessages.internal,
                         error
@@ -57,6 +58,7 @@ exports.getAll = (req, res) => {
                 })
         })
         .catch(error => {
+            console.log(error);
             res.status(statusCodes.server_error).json({
                 message: errorMessages.internal,
                 error

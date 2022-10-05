@@ -8,7 +8,7 @@ const images = require('../controllers/images');
 
 router.get('/:img', images.getImage);
 
-router.post('/', images.uploadImagesV2);
+router.post('/:albumId', images.uploadImagesV2);
 
 router.delete('/', images.delete);
 
