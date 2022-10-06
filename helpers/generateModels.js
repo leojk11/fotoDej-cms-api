@@ -183,5 +183,15 @@ exports.generateSchedule = (schedule) => {
     return newSchedule;
 }
 
+exports.generateImage = (image) => {
+    const newImage = {
+        id: image._id,
+        name: image.name,
+        album_id: image.album_id
+    };
+
+    return newImage;
+}
+
 
 

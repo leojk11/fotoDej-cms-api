@@ -7,9 +7,10 @@ const router = express.Router();
 const images = require('../controllers/images');
 
 router.get('/:img', images.getImage);
+router.get('/album/:id', images.getImagesForAlbum);
 
 router.post('/:albumId', images.uploadImagesV2);
 
-router.delete('/', images.delete);
+router.delete('/:id/:image', images.delete);
 
 module.exports = router;

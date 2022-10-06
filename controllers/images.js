@@ -5,6 +5,8 @@ const Image = require('../db/models/image');
 const { errorMessages } = require('../helpers/errorMessages');
 const { statusCodes } = require('../helpers/statusCodes');
 
+const { generateImage } = require('../helpers/generateModels');
+
 exports.getImage = (req, res) => {
     if(req.params.img) {
         const image = req.params.img;
@@ -27,7 +29,16 @@ exports.getImagesForAlbum = (req, res) => {
     if (req.params.id) {
         Image.find({ album_id: req.params.id })
             .then(images => {
-                res.status(statusCodes.success).send(images);
+                const imagesToSend = [];
+
+                for(const image of images) {
+                    imagesToSend.push(generateImage(image))
+                }
+
+                res.status(statusCodes.success).json({
+                    images: imagesToSend,
+                    imagesCount: images.length
+                });
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
@@ -82,7 +93,7 @@ exports.delete = (req, res) => {
   const path = './images/';
 
   const albumId = req.params.id;
-  const image = req.query.image;
+  const image = req.params.image;
 
   if (albumId) {
       if (image) {
