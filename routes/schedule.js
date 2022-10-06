@@ -13,4 +13,6 @@ router.post('/', verifyToken, schedules.addNew);
 
 router.patch('/:id', verifyToken, schedules.edit);
 
+router.delete('/:id', verifyToken, schedules.delete);
+
 module.exports = router;
