@@ -177,7 +177,9 @@ exports.generateSchedule = (schedule) => {
         description: schedule.description,
         date: schedule.date,
         time: schedule.time,
-        user_id: schedule.user_id
+        user_id: schedule.user_id,
+        location: schedule.location,
+        contact_number: schedule.contact_number
     };
 
     return newSchedule;

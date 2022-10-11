@@ -17,6 +17,14 @@ const scheduleSchema = new Schema({
     type: String,
   },
 
+  location: {
+    type: String
+  },
+
+  contact_number: {
+    type: String
+  },
+
   user_id: {
     type: String,
     required: true

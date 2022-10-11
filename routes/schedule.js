@@ -7,7 +7,7 @@ const schedules = require('../controllers/schedule');
 router.get('/', verifyToken, schedules.getAll);
 router.get('/:id', verifyToken, schedules.getSingle);
 
-router.get('/user/:id', verifyToken, schedules.getForUser);
+router.get('/for/user', verifyToken, schedules.getForUser);
 
 router.post('/', verifyToken, schedules.addNew);
 

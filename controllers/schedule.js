@@ -69,11 +69,15 @@ exports.getSingle = (req, res) => {
 }
 
 exports.getForUser = (req, res) => {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
     if(!req.query.from || !req.query.to) {
         res.status(400).json({
             message: 'Date from and to need to be provided.'
         })
     } else {
+        console.log(loggedInUser);
         Schedule.find({
             date: {
                 $gte: req.query.from,
@@ -83,11 +87,10 @@ exports.getForUser = (req, res) => {
             .then(schedules => {
                 const schedulesToSend = [];
 
-
                 for(const schedule of schedules) {
-                    if(schedule.user_id === req.params.id) {
+                    // if(schedule.user_id === req.params.id) {
                         schedulesToSend.push(generateSchedule(schedule));
-                    }
+                    // }
                 }
 
                 res.status(statusCodes.success).send(schedulesToSend);
