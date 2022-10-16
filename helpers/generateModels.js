@@ -202,7 +202,7 @@ exports.generateConf = (conf) => {
         main_image: conf.main_image,
         main_title: conf.main_title,
         second_title: conf.second_title,
-        promo_vide: conf.promo_video,
+        promo_video: conf.promo_video,
         contact_form_label: conf.contact_form_label,
         phone_number: conf.phone_number,
         email: conf.email,

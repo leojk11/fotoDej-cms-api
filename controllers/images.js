@@ -25,6 +25,8 @@ exports.getImage = (req, res) => {
     }
 }
 
+
+
 exports.getImagesForAlbum = (req, res) => {
     if (req.params.id) {
         Image.find({ album_id: req.params.id })
@@ -51,6 +53,8 @@ exports.getImagesForAlbum = (req, res) => {
         });
     }
 }
+
+
 
 exports.uploadImagesV2 = (req, res) => {
   if (!req.files) {

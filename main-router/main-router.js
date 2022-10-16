@@ -10,6 +10,10 @@ mainRouter.use('/auth', authRoutes);
 const imageRoutes = require('../routes/images');
 mainRouter.use('/images', imageRoutes);
 
+// video routes
+const videoRoutes = require('../routes/videos');
+mainRouter.use('/videos', videoRoutes);
+
 const userRoutes = require('../routes/user');
 const adminRoutes = require('../routes/admin');
 const clientRoutes = require('../routes/client');
