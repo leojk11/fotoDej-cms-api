@@ -2,11 +2,12 @@ const FeConfiguration = require('../db/models/feConfiguration');
 
 const { errorMessages } = require('../helpers/errorMessages');
 const { statusCodes } = require('../helpers/statusCodes');
+const { generateConf } = require('../helpers/generateModels');
 
 exports.get = (req, res) => {
     FeConfiguration.find()
         .then(configuration => {
-            res.status(statusCodes.success).send(configuration[0]);
+            res.status(statusCodes.success).send(generateConf(configuration[0]));
         })
         .catch(error => {
             console.log(error);
