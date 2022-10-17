@@ -31,6 +31,13 @@ const feConfiguration = new Schema({
     },
     address: {
         type: String
+    },
+
+    facebook_link: {
+        type: String
+    },
+    insta_link: {
+        type: String
     }
 });
 
