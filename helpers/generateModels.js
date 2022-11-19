@@ -206,7 +206,9 @@ exports.generateConf = (conf) => {
         contact_form_label: conf.contact_form_label,
         phone_number: conf.phone_number,
         email: conf.email,
-        address: conf.address
+        address: conf.address,
+        facebook_link: conf.facebook_link,
+        insta_link: conf.insta_link
     };
 
     if(conf.promo_images) {
