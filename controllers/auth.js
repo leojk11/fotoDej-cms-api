@@ -34,7 +34,8 @@ exports.adminLogin = (req, res) => {
                                     if(bcrypt.compareSync(data.password, admins[0].password)) {
                                         const token = jwt.sign(
                                             { ...admins[0] }, 
-                                            process.env.SECRET
+                                            process.env.SECRET,
+                                            { expiresIn: '1h' }
                                         );
                 
                                         res.status(200).json({
@@ -112,7 +113,8 @@ exports.clientLogin = (req, res) => {
                         if(bcrypt.compareSync(data.password, users[0].password)) {
                             const token = jwt.sign(
                                 { ...users[0] }, 
-                                process.env.SECRET
+                                process.env.SECRET,
+                                { expiresIn: '1h' }
                             );
     
                             res.status(200).json({
