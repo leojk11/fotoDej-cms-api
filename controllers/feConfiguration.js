@@ -105,7 +105,51 @@ exports.edit = (req, res) => {
 }
 
 exports.addPromoImages = (req, res) => {
+    const images = req.body.images;
+    console.log('images', images);
 
+    if (images.length > 6) {
+        res.status(statusCodes.user_error).json({
+            message: 'You cannot select more then 6 images.'
+        });
+    } else {
+        FeConfiguration.find()
+            .then(conf => {
+                let exImages = JSON.parse(conf[0].promo_images);
+
+                if (exImages.length > 0) {
+                    exImages.splice(exImages.length - images.length, images.length);
+                } else {
+                    exImages = images;
+                }
+
+                const toUpdate = {
+                    promo_images: exImages
+                };
+
+                FeConfiguration.updateOne(
+                    { _id: conf[0]._id },
+                    { ...toUpdate }
+                )
+                .then(() => {
+                    res.status(200).json({
+                        message: 'Promo images have been updated!'
+                    });
+                })
+                .catch(error => {
+                    console.log(error);
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal
+                    });
+                })
+            })
+            .catch(error => {
+                console.log(error);
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal
+                });
+            })
+    }
 }
 
 exports.addPromoVideo = (req, res) => {

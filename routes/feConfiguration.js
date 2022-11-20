@@ -9,8 +9,8 @@ router.get('/', configuration.get);
 router.post('/', verifyToken, configuration.add);
 
 router.patch('/', verifyToken, configuration.edit);
+router.patch('/images/promo', verifyToken, configuration.addPromoImages);
 
 router.delete('/', verifyToken, configuration.delete);
-
 
 module.exports = router;
