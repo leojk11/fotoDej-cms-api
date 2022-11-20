@@ -2,6 +2,7 @@ const Client = require('../db/models/client');
 const Modification = require('../db/models/modification');
 
 const bcrypt = require('bcrypt');
+const nodemailer = require('nodemailer');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
@@ -510,6 +511,82 @@ exports.delete = (req, res) => {
                                 });
                             }
                         })
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
+}
+
+exports.invite = (req, res) => {
+    const id = req.params.id;
+    const email = req.body.email;
+
+    if (id) {
+        Client.find({ _id: id })
+            .then(clients => {
+                if (clients.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.not_exist('Client', id)
+                    });
+                } else {
+                    const transporter = nodemailer.createTransport({
+                        service: 'gmail',
+                        auth: {
+                            user: process.env.EMAIL,
+                            pass: process.env.EMAIL_PASSWORD
+                        }
+                    });
+
+                    const mailOptions = {
+                        from: 'FotoDej',
+                        subject: 'Invite!',
+                        html: `
+                            <body style="padding: 0; margin: 0; background-color: rgba(223, 221, 220, 0.4);">
+                                <div style="width: 100%; background-color: #0a2c55; text-align: center; padding: 0.1rem;">
+                                    <h1 style="color: #ffffff">FotoDej</h1>
+                                </div>
+                            
+                                <div style="width: 100%; text-align: center; margin-top: 1rem;">
+                                    <h1 style="margin: 0;">Invite to login into FotoDej system</h1>
+                            
+                                    <h2 style="text-decoration: underline; margin: 0; margin-top: 2rem;">Email to login</h2>
+                                    <h3 style="margin: 0; font-weight: normal;">${ email ? email : clients[0].email }</h3>
+                            
+                                    <h2 style="text-decoration: underline; margin: 0; margin-top: 1rem;">Password to login</h2>
+                                    <h3 style="margin: 0; font-weight: normal;">${ clients[0].password }</h3>
+                                </div>
+                            </body>
+                        `
+                    };
+
+                    mailOptions['to'] = email ? email : clients[0].email;
+
+                    transporter.sendMail(mailOptions, (error, info) => {
+                        if (error) {
+                            res.status(500).json({
+                                message: 'Error while sending email!'
+                            });
+                        } else {
+                            res.status(200).json({
+                                message: 'Email has been sent successfully!'
+                            });
+                        }
+                    });
                 }
             })
             .catch(error => {

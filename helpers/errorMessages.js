@@ -1,5 +1,5 @@
 exports.errorMessages = {
-    not_authorized: 'You are not authorized. Please login/register.',
+    not_authorized: 'You are not authorized. Plase login!',
     internal: 'Internal server error!',
     id_missing: 'Please provide ID!',
     required_field: (field) => `${ field } is required.`,

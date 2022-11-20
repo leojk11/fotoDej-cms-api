@@ -9,6 +9,7 @@ router.get('/deleted', verifyToken, clients.getSoftDeletedClients);
 router.get('/:id', verifyToken, clients.getSingle);
 
 router.post('/', verifyToken, clients.addNew);
+router.post('/:id', verifyToken, clients.invite);
 
 router.put('/:id', verifyToken, clients.edit);
 
