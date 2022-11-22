@@ -1,4 +1,5 @@
 const FeConfiguration = require('../db/models/feConfiguration');
+const Image = require('../db/models/image');
 
 const { errorMessages } = require('../helpers/errorMessages');
 const { statusCodes } = require('../helpers/statusCodes');
@@ -150,6 +151,58 @@ exports.addPromoImages = (req, res) => {
                 });
             })
     }
+}
+
+exports.deletePromoImage = (req, res) => {
+    const image = req.params.image;
+
+    if (image) {
+        FeConfiguration.find()
+            .then(conf => {
+                let exImages = JSON.parse(conf[0].promo_images);
+                const chosenImageIndex = exImages.findIndex(img => img === image);
+
+                if (chosenImageIndex >= 0) {
+                    exImages = exImages.splice(chosenImageIndex, 1);
+
+                    const toUpdate = {
+                        promo_images: exImages
+                    };
+
+                    FeConfiguration.updateOne(
+                        { _id: conf[0]._id },
+                        { ...toUpdate }
+                    )
+                    .then(() => {
+                        // add feature to delete from folder
+                        res.status(statusCodes.success).json({
+                            message: 'Images has been deleted.'
+                        });
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal
+                        });
+                    })
+                } else {
+                    res.status(400).json({
+                        message: `Image ${ image } does not exist!`
+                    });
+                }
+            })
+            .catch(error => {
+                console.log(error);
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal
+                });
+            })
+    } else {
+        res.status(400).json({
+            message: 'You must select an image!'
+        });
+    }
+
 }
 
 exports.addPromoVideo = (req, res) => {

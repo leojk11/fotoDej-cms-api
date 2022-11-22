@@ -103,18 +103,18 @@ exports.delete = (req, res) => {
       if (image) {
           try {
               Image.deleteOne({ name: image, album_id: albumId })
-                  .then(() => {
-                      fs.unlinkSync(path + image);
+                .then(() => {
+                    fs.unlinkSync(path + image);
 
-                      res.status(statusCodes.success).json({
-                          message: `${ image } has been deleted.`
-                      });
-                  })
-                  .catch(() => {
-                      res.status(statusCodes.server_error).json({
-                          message: errorMessages.internal
-                      });
-                  })
+                    res.status(statusCodes.success).json({
+                    message: `${ image } has been deleted.`
+                    });
+                })
+                .catch(() => {
+                    res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal
+                });
+            })
           } catch (error) {
               res.status(statusCodes.internal).json({
                   message: errorMessages.internal,
