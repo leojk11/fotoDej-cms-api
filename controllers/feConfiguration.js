@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 const FeConfiguration = require('../db/models/feConfiguration');
 const Image = require('../db/models/image');
 
@@ -125,7 +127,7 @@ exports.addPromoImages = (req, res) => {
                 }
 
                 const toUpdate = {
-                    promo_images: exImages
+                    promo_images: JSON.stringify(exImages)
                 };
 
                 FeConfiguration.updateOne(
@@ -163,10 +165,10 @@ exports.deletePromoImage = (req, res) => {
                 const chosenImageIndex = exImages.findIndex(img => img === image);
 
                 if (chosenImageIndex >= 0) {
-                    exImages = exImages.splice(chosenImageIndex, 1);
+                    exImages.splice(chosenImageIndex, 1);
 
                     const toUpdate = {
-                        promo_images: exImages
+                        promo_images: JSON.stringify(exImages)
                     };
 
                     FeConfiguration.updateOne(
@@ -174,13 +176,14 @@ exports.deletePromoImage = (req, res) => {
                         { ...toUpdate }
                     )
                     .then(() => {
-                        // add feature to delete from folder
+                        const path = './images/';
+
+                        fs.unlinkSync(path + image);
                         res.status(statusCodes.success).json({
-                            message: 'Images has been deleted.'
+                            message: `${ image } has been deleted.`
                         });
                     })
                     .catch(error => {
-                        console.log(error);
                         res.status(statusCodes.server_error).json({
                             message: errorMessages.internal
                         });
@@ -192,7 +195,6 @@ exports.deletePromoImage = (req, res) => {
                 }
             })
             .catch(error => {
-                console.log(error);
                 res.status(statusCodes.server_error).json({
                     message: errorMessages.internal
                 });
