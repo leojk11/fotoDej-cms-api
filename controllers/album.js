@@ -389,6 +389,8 @@ exports.edit = (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
 
+    console.log('body', req.body);
+
     if(id) {
         Album.find({ _id: id, active: true })
             .then(albums => {
@@ -412,50 +414,108 @@ exports.edit = (req, res) => {
                         modified_by: JSON.stringify(generateCleanModel(loggedInUser))
                     };
 
-                    Album.updateOne(
-                        { _id: id },
-                        { ...data }
-                    )
-                    .then(_ => {
-                        Album.find({ _id: id })
-                            .then(newAlbum => {
-                                Modification.insertMany(modification)
-                                    .then(newModification => {
-                                        res.status(statusCodes.success).json({
-                                            message: 'Album has been updated.',
-                                            album: generateAlbum(newAlbum[0]),
-                                            modification: generateModification(newModification[0])
-                                        });
-                                    })
-                                    .catch(error => {
-                                        res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal
-                                        });
-                                    })
-                            })
-                            .catch(error => {
-                                if(error.kind === ErrorKind.ID) {
+                    if (req.body.assigned_to_id) {
+                        Client.find({ _id: req.body.assigned_to_id })
+                            .then(clients => {
+                                if (clients.length === 0) {
                                     res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id(req.params.id)
+                                        message: errorMessages.not_exist('Client', req.body.assigned_to_id)
                                     });
                                 } else {
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal
+                                    data['assigned_to'] = JSON.stringify(generateCleanModel(clients[0]))
+
+                                    Album.updateOne(
+                                        { _id: id },
+                                        { ...data }
+                                    )
+                                    .then(_ => {
+                                        Album.find({ _id: id })
+                                            .then(newAlbum => {
+                                                Modification.insertMany(modification)
+                                                    .then(newModification => {
+                                                        res.status(statusCodes.success).json({
+                                                            message: 'Album has been updated.',
+                                                            album: generateAlbum(newAlbum[0]),
+                                                            modification: generateModification(newModification[0])
+                                                        });
+                                                    })
+                                                    .catch(error => {
+                                                        res.status(statusCodes.server_error).json({
+                                                            message: errorMessages.internal
+                                                        });
+                                                    })
+                                            })
+                                            .catch(error => {
+                                                if(error.kind === ErrorKind.ID) {
+                                                    res.status(statusCodes.user_error).json({
+                                                        message: errorMessages.invalid_id(req.params.id)
+                                                    });
+                                                } else {
+                                                    res.status(statusCodes.server_error).json({
+                                                        message: errorMessages.internal
+                                                    });
+                                                }
+                                            })
+                                    })
+                                    .catch(error => {
+                                        if(error.kind === ErrorKind.ID) {
+                                            res.status(statusCodes.user_error).json({
+                                                message: errorMessages.invalid_id(req.params.id)
+                                            });
+                                        } else {
+                                            res.status(statusCodes.server_error).json({
+                                                message: errorMessages.internal
+                                            });
+                                        }
                                     });
                                 }
                             })
-                    })
-                    .catch(error => {
-                        if(error.kind === ErrorKind.ID) {
-                            res.status(statusCodes.user_error).json({
-                                message: errorMessages.invalid_id(req.params.id)
-                            });
-                        } else {
-                            res.status(statusCodes.server_error).json({
-                                message: errorMessages.internal
-                            });
-                        }
-                    })
+                    } else {
+                        Album.updateOne(
+                            { _id: id },
+                            { ...data }
+                        )
+                        .then(_ => {
+                            Album.find({ _id: id })
+                                .then(newAlbum => {
+                                    Modification.insertMany(modification)
+                                        .then(newModification => {
+                                            res.status(statusCodes.success).json({
+                                                message: 'Album has been updated.',
+                                                album: generateAlbum(newAlbum[0]),
+                                                modification: generateModification(newModification[0])
+                                            });
+                                        })
+                                        .catch(error => {
+                                            res.status(statusCodes.server_error).json({
+                                                message: errorMessages.internal
+                                            });
+                                        })
+                                })
+                                .catch(error => {
+                                    if(error.kind === ErrorKind.ID) {
+                                        res.status(statusCodes.user_error).json({
+                                            message: errorMessages.invalid_id(req.params.id)
+                                        });
+                                    } else {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal
+                                        });
+                                    }
+                                })
+                        })
+                        .catch(error => {
+                            if(error.kind === ErrorKind.ID) {
+                                res.status(statusCodes.user_error).json({
+                                    message: errorMessages.invalid_id(req.params.id)
+                                });
+                            } else {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal
+                                });
+                            }
+                        });
+                    }
                 }
             })
             .catch(error => {

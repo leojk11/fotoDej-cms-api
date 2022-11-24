@@ -26,6 +26,9 @@ const clientSchema = new Schema({
         type: String,
         required: true
     },
+    first_password: {
+        type: String
+    },
 
     profile_image: {
         type: String

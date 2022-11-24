@@ -193,6 +193,7 @@ exports.addNew = (req, res) => {
                     })
                 } else {
                     data['password'] = bcrypt.hashSync(req.body.password, 10);
+                    data['first_password'] = req.body.password;
 
                     Client.insertMany({ ...data })
                         .then(_ => {
@@ -324,6 +325,12 @@ exports.edit = (req, res) => {
             message: errorMessages.id_missing
         });
     }
+}
+
+exports.resetFirstPassword = (req, res) => {
+    const id = req.params.id;
+
+    
 }
 
 exports.softDelete = (req, res) => {

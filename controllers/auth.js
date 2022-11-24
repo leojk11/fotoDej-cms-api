@@ -110,22 +110,34 @@ exports.clientLogin = (req, res) => {
                     });
                 } else {
                     if(users[0].active) {
-                        if(bcrypt.compareSync(data.password, users[0].password)) {
-                            const token = jwt.sign(
-                                { ...users[0] }, 
-                                process.env.SECRET,
-                                { expiresIn: '1h' }
-                            );
-    
-                            res.status(200).json({
-                                message: 'Logged in successfully.',
-                                token,
-                                user: users[0]
-                            });
+                        if (users[0].first_password) {
+                            if (data.password === users[0].first_password) {
+                                res.status(statusCodes.success).json({
+                                    message: 'RESET_REQUIRED'
+                                });
+                            } else {
+                                res.status(statusCodes.user_error).json({
+                                    message: 'Incorrect password!'
+                                });
+                            }
                         } else {
-                            res.status(statusCodes.user_error).json({
-                                message: 'Incorrect password!'
-                            });
+                            if(bcrypt.compareSync(data.password, users[0].password)) {
+                                const token = jwt.sign(
+                                    { ...users[0] }, 
+                                    process.env.SECRET,
+                                    { expiresIn: '1h' }
+                                );
+        
+                                res.status(200).json({
+                                    message: 'Logged in successfully.',
+                                    token,
+                                    user: users[0]
+                                });
+                            } else {
+                                res.status(statusCodes.user_error).json({
+                                    message: 'Incorrect password!'
+                                });
+                            }
                         }
                     } else {
                         res.status(statusCodes.user_error).json({

@@ -1,7 +1,6 @@
 const fs = require('fs');
 
 const FeConfiguration = require('../db/models/feConfiguration');
-const Image = require('../db/models/image');
 
 const { errorMessages } = require('../helpers/errorMessages');
 const { statusCodes } = require('../helpers/statusCodes');
@@ -204,7 +203,6 @@ exports.deletePromoImage = (req, res) => {
             message: 'You must select an image!'
         });
     }
-
 }
 
 exports.addPromoVideo = (req, res) => {
