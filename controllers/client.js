@@ -2,6 +2,7 @@ const Client = require('../db/models/client');
 const Modification = require('../db/models/modification');
 
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
 const { statusCodes } = require('../helpers/statusCodes');
@@ -345,9 +346,83 @@ exports.edit = (req, res) => {
 }
 
 exports.resetFirstPassword = (req, res) => {
-    const id = req.params.id;
+    const _id = req.params.id;
+    const data = {
+        first_password: req.body.first_password,
+        password: req.body.password,
+        rePassword: req.body.repeat_password
+    };
 
-    
+    if (_id) {
+        Client.find({ _id })
+            .then(clients => {
+                if (clients.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.not_exist('Client', _id)
+                    });
+                } else {
+                    if (data.first_password === clients[0].first_password) {
+                        if (data.password === data.rePassword) {
+                            const newPassword = bcrypt.hashSync(data.password, 10);
+
+                            Client.updateOne(
+                                { _id },
+                                { password: newPassword }
+                            )
+                            .then(_ => {
+                                const token = jwt.sign(
+                                    { ...generateCleanModel(users[0]) }, 
+                                    process.env.SECRET,
+                                    { expiresIn: '1h' }
+                                );
+        
+                                res.status(200).json({
+                                    message: 'Logged in successfully.',
+                                    token,
+                                    user: generateCleanModel(users[0])
+                                });
+                            })
+                            .catch(error => {
+                                if(error.kind === ErrorKind.ID) {
+                                    res.status(statusCodes.user_error).json({
+                                        message: errorMessages.invalid_id(_id)
+                                    });
+                                } else {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal,
+                                        error
+                                    });
+                                }
+                            })
+                        } else {
+                            res.status(statusCodes.user_error).json({
+                                message: 'Passwords do not match.'
+                            });
+                        }
+                    } else {
+                        res.status(statusCodes.user_error).json({
+                            message: 'Inserted password is not correct.'
+                        });
+                    }
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(_id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
 }
 
 exports.softDelete = (req, res) => {
