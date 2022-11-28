@@ -31,7 +31,14 @@ exports.getAll = (req, res) => {
 
     const filters = { active: true };
 
-    Client.find({ ...filters })
+    if (req.query.name) {
+        filters.$or = [
+            { firstname: {$regex: req.query.name, $options: 'i'} },
+            { lastname: {$regex: req.query.name, $options: 'i'} }  
+        ];
+    }
+
+    Client.find(filters)
         .sort({ _id: 'asc' })
         .skip(skip)
         .limit(parseInt(req.query.take))
@@ -60,9 +67,10 @@ exports.getAll = (req, res) => {
                 })
         })
         .catch(error => {
+            console.log(error);
             res.status(statusCodes.server_error).json({
                 message: errorMessages.internal,
-                error
+                error: {}
             });
         })
 }
