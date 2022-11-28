@@ -592,7 +592,7 @@ exports.invite = (req, res) => {
                                     <h3 style="margin: 0; font-weight: normal;">${ email ? email : clients[0].email }</h3>
                             
                                     <h2 style="text-decoration: underline; margin: 0; margin-top: 1rem;">Password to login</h2>
-                                    <h3 style="margin: 0; font-weight: normal;">${ clients[0].password }</h3>
+                                    <h3 style="margin: 0; font-weight: normal;">${ clients[0].first_password }</h3>
                                 </div>
                             </body>
                         `
