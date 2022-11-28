@@ -29,12 +29,19 @@ exports.getAll = (req, res) => {
 
     const filters = { active: true };
 
-    Album.find({ ...filters })
+    if (req.query.date) {
+        filters.date = req.query.date;
+    }
+    if (req.query.title) {
+        filters.title = { $regex: req.query.title, $options: 'i' };
+    }
+
+    Album.find(filters)
         .sort({ _id: 'asc' })
         .skip(skip)
         .limit(parseInt(req.query.take))
         .then(albums => {
-            Album.find({ ...filters })
+            Album.find(filters)
                 .count()
                 .then(countRes => {
                     const albumsToSend = [];

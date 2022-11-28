@@ -37,13 +37,22 @@ exports.getAll = (req, res) => {
             { lastname: {$regex: req.query.name, $options: 'i'} }  
         ];
     }
+    if (req.query.phone_number) {
+        filters.phone_number = { $regex: req.query.phone_number, $options: 'i' };
+    }
+    if (req.params.username) {
+        filters.username = { $regex: req.query.username, $options: 'i' };
+    }
+    if (req.params.email) {
+        filters.email = { $regex: req.query.email, $options: 'i' };
+    }
 
     Client.find(filters)
         .sort({ _id: 'asc' })
         .skip(skip)
         .limit(parseInt(req.query.take))
         .then(clients => {
-            Client.find({ ...filters })
+            Client.find(filters)
                 .count()
                 .then(countRes => {
                     const clientsToSend = [];
