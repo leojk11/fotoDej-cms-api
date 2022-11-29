@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
+const { generateCleanModel } = require('../helpers/generateModels');
 
 exports.adminLogin = (req, res) => {
     const data = { ...req.body };
@@ -33,7 +34,7 @@ exports.adminLogin = (req, res) => {
                                 if(users[0].active) {
                                     if(bcrypt.compareSync(data.password, admins[0].password)) {
                                         const token = jwt.sign(
-                                            { ...admins[0] }, 
+                                            { ...generateCleanModel(admins[0]) }, 
                                             process.env.SECRET,
                                             { expiresIn: '1h' }
                                         );
@@ -41,7 +42,7 @@ exports.adminLogin = (req, res) => {
                                         res.status(200).json({
                                             message: 'Logged in successfully.',
                                             token,
-                                            user: admins[0]
+                                            user: generateCleanModel(admins[0])
                                         });
                                     } else {
                                         res.status(statusCodes.user_error).json({
@@ -65,14 +66,15 @@ exports.adminLogin = (req, res) => {
                 } else {
                     if(bcrypt.compareSync(data.password, admins[0].password)) {
                         const token = jwt.sign(
-                            { ...admins[0] }, 
-                            process.env.SECRET
+                            { ...generateCleanModel(admins[0]) }, 
+                            process.env.SECRET,
+                            { expiresIn: '1h' }
                         );
 
                         res.status(200).json({
                             message: 'Logged in successfully.',
                             token,
-                            user: admins[0]
+                            user: generateCleanModel(admins[0])
                         });
                     } else {
                         res.status(statusCodes.user_error).json({
@@ -123,7 +125,7 @@ exports.clientLogin = (req, res) => {
                         } else {
                             if(bcrypt.compareSync(data.password, users[0].password)) {
                                 const token = jwt.sign(
-                                    { ...users[0] }, 
+                                    { ...generateCleanModel(users[0]) }, 
                                     process.env.SECRET,
                                     { expiresIn: '1h' }
                                 );
@@ -131,7 +133,7 @@ exports.clientLogin = (req, res) => {
                                 res.status(200).json({
                                     message: 'Logged in successfully.',
                                     token,
-                                    user: users[0]
+                                    user: generateCleanModel(users[0])
                                 });
                             } else {
                                 res.status(statusCodes.user_error).json({

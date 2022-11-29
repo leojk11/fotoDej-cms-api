@@ -49,7 +49,7 @@ exports.getAll = (req, res) => {
     }
 
     Client.find(filters)
-        .sort({ _id: 'asc' })
+        .sort({ _id: 'desc' })
         .skip(skip)
         .limit(parseInt(req.query.take))
         .then(clients => {

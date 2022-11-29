@@ -37,7 +37,7 @@ exports.getAll = (req, res) => {
     }
 
     Album.find(filters)
-        .sort({ _id: 'asc' })
+        .sort({ _id: 'desc' })
         .skip(skip)
         .limit(parseInt(req.query.take))
         .then(albums => {
