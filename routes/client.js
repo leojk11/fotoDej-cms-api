@@ -14,6 +14,7 @@ router.post('/:id', verifyToken, clients.invite);
 router.put('/:id', verifyToken, clients.edit);
 
 router.patch('/recover/:id', verifyToken, clients.recover);
+router.patch('/reset/first_password/:id', clients.resetFirstPassword);
 
 router.delete('/:id', verifyToken, clients.softDelete);
 router.delete('/delete/:id', verifyToken, clients.delete);

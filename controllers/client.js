@@ -371,7 +371,7 @@ exports.resetFirstPassword = (req, res) => {
                             )
                             .then(_ => {
                                 const token = jwt.sign(
-                                    { ...generateCleanModel(users[0]) }, 
+                                    { ...generateCleanModel(clients[0]) }, 
                                     process.env.SECRET,
                                     { expiresIn: '1h' }
                                 );
@@ -379,10 +379,11 @@ exports.resetFirstPassword = (req, res) => {
                                 res.status(200).json({
                                     message: 'Logged in successfully.',
                                     token,
-                                    user: generateCleanModel(users[0])
+                                    user: generateCleanModel(clients[0])
                                 });
                             })
                             .catch(error => {
+                                console.log(error);
                                 if(error.kind === ErrorKind.ID) {
                                     res.status(statusCodes.user_error).json({
                                         message: errorMessages.invalid_id(_id)
