@@ -345,6 +345,75 @@ exports.edit = (req, res) => {
     }
 }
 
+exports.changeAccoutStatus = (req, res) => {
+    const _id = req.params.id;
+    const status = req.params.status;
+
+    const availableStatuses = [];
+
+    for (const [key] of Object.entries(AccountStatus)) {
+        availableStatuses.push(key);
+    }
+
+    if (_id) {  
+        if (status !== AccountStatus.ACTIVE && status !== AccountStatus.SUSPENDED) {
+            res.status(statusCodes.user_error).json({
+                message: `Account status can only be changed to ${ JSON.stringify(availableStatuses) }`
+            });
+        } else {
+            Client.find({ _id })
+                .then(clients => {
+                    if (clients.length === 0) {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.not_exist('Client', id)
+                        });
+                    } else {
+                        if (clients[0].account_status === AccountStatus.SUSPENDED && status === AccountStatus.SUSPENDED) {
+                            res.status(statusCodes.user_error).json({
+                                message: `Account status ${ AccountStatus.SUSPENDED } can only be changed to ${ AccountStatus.ACTIVE }`
+                            });
+                        } else if (clients[0].account_status === AccountStatus.ACTIVE && status === AccountStatus.ACTIVE) {
+                            res.status(statusCodes.user_error).json({
+                                message: `Account status ${ AccountStatus.ACTIVE } can only be changed to ${ AccountStatus.SUSPENDED }`
+                            });
+                        } else {
+                            Client.updateOne(
+                                { _id },
+                                { account_status: status }
+                            )
+                            .then(() => {
+                                res.status(statusCodes.success).json({
+                                    message: `Account status has been updated to ${ status }`
+                                });
+                            })
+                            .catch(() => {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal
+                                });
+                            })
+                        }
+                    }
+                })
+                .catch(error => {
+                    if(error.kind === ErrorKind.ID) {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.invalid_id(id)
+                        });
+                    } else {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal,
+                            error
+                        });
+                    }
+                })
+        }
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
+}
+
 exports.resetFirstPassword = (req, res) => {
     const _id = req.params.id;
     const data = {

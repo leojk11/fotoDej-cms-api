@@ -1,7 +1,6 @@
 exports.AccountStatus = {
     ACTIVE: 'ACTIVE',
-    SUSPENDED: 'SUSPENDED',
-    NOT_ACTIVATED: 'NOT_ACTIVATED'
+    SUSPENDED: 'SUSPENDED'
 };
 
 exports.OnlineStatus = {
