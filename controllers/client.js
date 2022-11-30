@@ -1,5 +1,6 @@
 const Client = require('../db/models/client');
 const Modification = require('../db/models/modification');
+const Invite = require('../db/models/invite');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -705,6 +706,9 @@ exports.invite = (req, res) => {
     const id = req.params.id;
     const email = req.body.email;
 
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
     if (id) {
         Client.find({ _id: id })
             .then(clients => {
@@ -747,13 +751,32 @@ exports.invite = (req, res) => {
 
                     transporter.sendMail(mailOptions, (error, info) => {
                         if (error) {
-                            res.status(500).json({
+                            res.status(statusCodes.server_error).json({
                                 message: 'Error while sending email!'
                             });
                         } else {
-                            res.status(200).json({
-                                message: 'Email has been sent successfully!'
-                            });
+                            const invite = {
+                                invited_client: generateCleanModel(clients[0]),
+                                ivnited_client_id: clients[0]._id,
+
+                                invited_by: generateCleanModel(loggedInUser),
+                                invited_by_id: loggedInUser.id,
+
+                                date: generateDate(),
+                                time: generateTime()
+                            };
+
+                            Invite.insertMany(invite)
+                                .then(() => {
+                                    res.status(statusCodes.success).json({
+                                        message: 'Email has been sent successfully!'
+                                    });
+                                })
+                                .catch(error => {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal
+                                    });
+                                })
                         }
                     });
                 }
