@@ -1,5 +1,4 @@
 # FotoDej CMS API
-test
 
 ## Api URL
 https://jealous-erin-handkerchief.cyclic.app
