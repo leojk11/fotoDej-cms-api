@@ -8,9 +8,9 @@ const { parseJwt } = require('../middlewares/common');
 
 exports.getAll = (req, res) => {
     if(!req.query.from || !req.query.to) {
-        res.status(400).json({
+        res.status(statusCodes.user_error).json({
             message: 'Date from and to need to be provided.'
-        })
+        });
     } else {
         Schedule.find({
             date: {
@@ -42,7 +42,7 @@ exports.getAll = (req, res) => {
 
                 res.status(statusCodes.success).send(groupArrays);
             })
-            .catch(error => {
+            .catch(() => {
                 res.status(statusCodes.server_error).json({
                     message: errorMessages.internal
                 });
@@ -51,15 +51,24 @@ exports.getAll = (req, res) => {
 }
 
 exports.getSingle = (req, res) => {
-    if (req.params.id) {
-        Schedule.find({ _id: req.params.id })
+    const _id = req.params.id;
+
+    if (_id) {
+        Schedule.find({ _id })
             .then(schedules => {
                 res.status(statusCodes.success).send(generateSchedule(schedules[0]));
             })
             .catch(error => {
-                res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
-                });
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
             })
     } else {
         res.status(statusCodes.user_error).json({
@@ -77,7 +86,6 @@ exports.getForUser = (req, res) => {
             message: 'Date from and to need to be provided.'
         })
     } else {
-        console.log(loggedInUser);
         Schedule.find({
             date: {
                 $gte: req.query.from,
@@ -110,21 +118,31 @@ exports.addNew = (req, res) => {
 
     const data = {
         ...req.body,
-        user_id: loggedInUser._id
+        user_id: loggedInUser.id
     };
 
-    Schedule.insertMany(data)
-        .then(addNewRes => {
-            res.status(statusCodes.success).json({
-                message: 'Schedule has been added.',
-                schedule: generateSchedule(addNewRes[0])
-            });
-        })
-        .catch(error => {
-            res.status(statusCodes.server_error).json({
-               message: errorMessages.internal
-            });
-        })
+    if (!data.title || data.title === '') {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.required_field('Title')
+        });
+    } else if (!data.date || data.date === '') {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.required_field('Date')
+        });
+    } else {
+        Schedule.insertMany(data)
+            .then(addNewRes => {
+                res.status(statusCodes.success).json({
+                    message: 'Schedule has been added.',
+                    schedule: generateSchedule(addNewRes[0])
+                });
+            })
+            .catch(error => {
+                res.status(statusCodes.server_error).json({
+                message: errorMessages.internal
+                });
+            })
+    }
 }
 
 exports.edit = (req, res) => {
@@ -154,9 +172,16 @@ exports.edit = (req, res) => {
                     })
             })
             .catch(error => {
-                res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
-                });
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
             })
     } else {
         res.status(statusCodes.user_error).json({
@@ -176,9 +201,16 @@ exports.delete = (req, res) => {
                 })
             })
             .catch(error => {
-                res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
-                })
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
             })
     } else {
         res.status(statusCodes.user_error).json({

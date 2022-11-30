@@ -331,7 +331,7 @@ exports.addNew = (req, res) => {
 
         created_date: generateDate(),
         created_by: JSON.stringify(generateCleanModel(loggedInUser)),
-        created_by_id: loggedInUser._id,
+        created_by_id: loggedInUser.id,
 
         active: true
     };
@@ -772,7 +772,7 @@ exports.assignUser = (req, res) => {
                                             assigned_to: JSON.stringify(generateCleanModel(clients[0])),
 
                                             modified_date: generateDate(),
-                                            modified_by_id: loggedInUser._id,
+                                            modified_by_id: loggedInUser.id,
                                             modified_by: JSON.stringify(generateCleanModel(loggedInUser))
                                         }
                                     )
