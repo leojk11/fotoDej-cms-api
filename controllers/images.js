@@ -25,8 +25,6 @@ exports.getImage = (req, res) => {
     }
 }
 
-
-
 exports.getImagesForAlbum = (req, res) => {
     if (req.params.id) {
         Image.find({ album_id: req.params.id })
@@ -42,7 +40,7 @@ exports.getImagesForAlbum = (req, res) => {
                     imagesCount: images.length
                 });
             })
-            .catch(error => {
+            .catch(() => {
                 res.status(statusCodes.server_error).json({
                     message: errorMessages.internal
                 });
@@ -53,8 +51,6 @@ exports.getImagesForAlbum = (req, res) => {
         });
     }
 }
-
-
 
 exports.uploadImagesV2 = (req, res) => {
   if (!req.files) {
@@ -83,9 +79,12 @@ exports.uploadImagesV2 = (req, res) => {
                 });
             }
 
-            res.status(200).json({ success: true, message: 'uploaded successfully' });
+            res.status(statusCodes.success).json({ 
+                success: true,
+                message: 'uploaded successfully' 
+            });
         })
-        .catch(error => {
+        .catch(() => {
             res.status(statusCodes.server_error).json({
                 message: errorMessages.internal
             });
@@ -107,14 +106,14 @@ exports.delete = (req, res) => {
                     fs.unlinkSync(path + image);
 
                     res.status(statusCodes.success).json({
-                    message: `${ image } has been deleted.`
+                        message: `${ image } has been deleted.`
                     });
                 })
                 .catch(() => {
                     res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
-                });
-            })
+                        message: errorMessages.internal
+                    });
+                })
           } catch (error) {
               res.status(statusCodes.internal).json({
                   message: errorMessages.internal,

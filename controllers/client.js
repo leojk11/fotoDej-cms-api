@@ -5,6 +5,7 @@ const Invite = require('../db/models/invite');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const fs = require('fs');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
@@ -344,6 +345,69 @@ exports.edit = (req, res) => {
             message: errorMessages.id_missing
         });
     }
+}
+
+exports.changeProfileImage = (req, res) => {
+    const path = './images/profile_images/';
+
+    const _id = req.params.id;
+    const image = req.files.image;
+
+    if (_id) {
+        Client.find({ _id })
+            .then(clients => {
+                if (clients.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.not_exist('Client', id)
+                    });
+                } else {
+                    const client = clients[0];
+
+                    if (client.profile_image) {
+                        fs.unlinkSync(path + client.profile_image);
+                    }
+
+                    const newFileName = clients[0]._id + '_' + image.name;
+                    image.mv(path + newFileName);
+
+                    Client.updateOne(
+                        { _id },
+                        { profile_image: newFileName }
+                    )
+                    .then(() => {
+                        client.profile_image = newFileName;
+
+                        res.status(statusCodes.success).json({
+                            message: 'Image has been changed.',
+                            user: generateCleanModel(client)
+                        });
+                    })
+                    .catch(error => {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal,
+                            error
+                        });
+                    })
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing
+        });
+    }
+
 }
 
 exports.changeAccoutStatus = (req, res) => {

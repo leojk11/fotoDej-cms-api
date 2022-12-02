@@ -13,6 +13,7 @@ router.post('/:id', verifyToken, clients.invite);
 
 router.put('/:id', verifyToken, clients.edit);
 
+router.patch('/profile_image/change/:id', verifyToken, clients.changeProfileImage);
 router.patch('/recover/:id', verifyToken, clients.recover);
 router.patch('/account_status/:id/:status', verifyToken, clients.changeAccoutStatus);
 
