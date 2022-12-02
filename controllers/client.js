@@ -20,10 +20,14 @@ const { generateDate, generateTime } = require('../helpers/timeDate');
 const { ErrorKind } = require('../enums/errorKind');
 const { AccountStatus } = require('../enums/accountStatus');
 const { ModificationType } = require('../enums/modificationType');
+const { AdminRole } = require('../enums/adminRole');
 
 const { parseJwt } = require('../middlewares/common');
 
 exports.getAll = (req, res) => {
+
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
 
     let skip = 0;
     if(parseInt(req.query.page) === 1) {
@@ -32,7 +36,11 @@ exports.getAll = (req, res) => {
         skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
     }
 
-    const filters = { active: true };
+    const filters = {};
+
+    if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
+        filters.active = true;
+    }
 
     if (req.query.name) {
         filters.$or = [
@@ -89,48 +97,58 @@ exports.getAll = (req, res) => {
 
 exports.getSoftDeletedClients = (req, res) => {
 
-    let skip = 0;
-    if(parseInt(req.query.page) === 1) {
-        skip = 0;
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.no_permission,
+            rolesAllowed: AdminRole.SUPER_ADMIN
+        });
     } else {
-        skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
+        let skip = 0;
+        if(parseInt(req.query.page) === 1) {
+            skip = 0;
+        } else {
+            skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
+        }
+    
+        const filters = { active: false };
+    
+        Client.find({ ...filters })
+            .sort({ _id: 'asc' })
+            .skip(skip)
+            .limit(parseInt(req.query.take))
+            .then(clients => {
+                Client.find({ ...filters })
+                    .count()
+                    .then(countRes => {
+                        const clientsToSend = [];
+    
+                        for(const client of clients) {
+                            clientsToSend.push(generateClient(client));
+                        }
+    
+                        res.status(statusCodes.success).json({
+                            page: parseInt(req.query.page),
+                            total: countRes,
+                            list: clientsToSend
+                        });
+                    })
+                    .catch(error => {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal,
+                            error
+                        });
+                    })
+            })
+            .catch(error => {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal,
+                    error
+                });
+            })
     }
-
-    const filters = { active: false };
-
-    Client.find({ ...filters })
-        .sort({ _id: 'asc' })
-        .skip(skip)
-        .limit(parseInt(req.query.take))
-        .then(clients => {
-            Client.find({ ...filters })
-                .count()
-                .then(countRes => {
-                    const clientsToSend = [];
-
-                    for(const client of clients) {
-                        clientsToSend.push(generateClient(client));
-                    }
-
-                    res.status(statusCodes.success).json({
-                        page: parseInt(req.query.page),
-                        total: countRes,
-                        list: clientsToSend
-                    });
-                })
-                .catch(error => {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
-                        error
-                    });
-                })
-        })
-        .catch(error => {
-            res.status(statusCodes.server_error).json({
-                message: errorMessages.internal,
-                error
-            });
-        })
 }
 
 exports.getSingle = (req, res) => {
@@ -717,52 +735,63 @@ exports.recover = (req, res) => {
 }
 
 exports.delete = (req, res) => {
-    const id = req.params.id;
 
-    if(id) {
-        Client.find({ _id: id })
-            .then(clients => {
-                if(clients.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', id)
-                    });
-                } else {
-                    Client.deleteOne({ _id: id })
-                        .then(_ => {
-                            res.status(statusCodes.success).json({
-                                message: `User ${ generateClient(clients[0]).fullname } has been deleted permanently.`
-                            })
-                        })
-                        .catch(error => {
-                            if(error.kind === ErrorKind.ID) {
-                                res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(id)
-                                });
-                            } else {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
-                                    error
-                                });
-                            }
-                        })
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.no_permission,
+            rolesAllowed: AdminRole.SUPER_ADMIN
         });
+    } else {
+        const id = req.params.id;
+    
+        if(id) {
+            Client.find({ _id: id })
+                .then(clients => {
+                    if(clients.length === 0) {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.not_exist('Client', id)
+                        });
+                    } else {
+                        Client.deleteOne({ _id: id })
+                            .then(_ => {
+                                res.status(statusCodes.success).json({
+                                    message: `User ${ generateClient(clients[0]).fullname } has been deleted permanently.`
+                                })
+                            })
+                            .catch(error => {
+                                if(error.kind === ErrorKind.ID) {
+                                    res.status(statusCodes.user_error).json({
+                                        message: errorMessages.invalid_id(id)
+                                    });
+                                } else {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal,
+                                        error
+                                    });
+                                }
+                            })
+                    }
+                })
+                .catch(error => {
+                    if(error.kind === ErrorKind.ID) {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.invalid_id(id)
+                        });
+                    } else {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal,
+                            error
+                        });
+                    }
+                })
+        } else {
+            res.status(statusCodes.user_error).json({
+                message: errorMessages.id_missing
+            });
+        }
     }
 }
 
