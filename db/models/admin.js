@@ -11,18 +11,10 @@ const adminSchema = new Schema({
         required: true
     },
     phone_number: {
-        type: String
-    },
-
-    role: {
-        type: String,
-        required: true
-    }, // ADMIN, HEAD_ADMIN, OP
-
-    username: {
         type: String,
         required: true
     },
+    
     email: {
         type: String,
         required: true
@@ -31,10 +23,45 @@ const adminSchema = new Schema({
         type: String,
         required: true
     },
-
+    
     profile_image: {
         type: String
     },
+
+    role: {
+        type: String,
+        required: true
+    }, // ADMIN, SUPER_ADMIN
+
+    added_by: {
+        type: Object,
+        required: true
+    },
+    added_by_id: {
+        type: String,
+        required: true
+    },
+    date_added: {
+        type: String,
+        required: true
+    },
+    time_added: {
+        type: String,
+        required: true
+    },
+
+    modified_by: {
+        type: Object
+    },
+    modified_by_id: {
+        type: String
+    },
+    modified_date: {
+        type: String
+    },
+    modified_time: {
+        type: String
+    }
 });
 
 const Admin = mongoose.model('Admin', adminSchema);
