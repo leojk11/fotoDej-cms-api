@@ -21,6 +21,7 @@ const albumRoutes = require('../routes/album');
 const modificationRoutes = require('../routes/modification');
 const scheduleRoutes = require('../routes/schedule');
 const configuration = require('../routes/feConfiguration');
+const inviteRoutes = require('../routes/invite');
 
 mainRouter.use('/users', userRoutes);
 mainRouter.use('/admin', adminRoutes);
@@ -29,5 +30,6 @@ mainRouter.use('/albums', albumRoutes);
 mainRouter.use('/modifications', modificationRoutes);
 mainRouter.use('/schedules', scheduleRoutes);
 mainRouter.use('/conf', configuration);
+mainRouter.use('/invites', inviteRoutes);
 
 module.exports = mainRouter;

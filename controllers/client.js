@@ -850,9 +850,9 @@ exports.invite = (req, res) => {
                         } else {
                             const invite = {
                                 invited_client: generateCleanModel(clients[0]),
-                                ivnited_client_id: clients[0]._id,
+                                invited_client_id: clients[0]._id,
 
-                                invited_by: generateCleanModel(loggedInUser),
+                                invited_by: loggedInUser,
                                 invited_by_id: loggedInUser.id,
 
                                 date: generateDate(),
