@@ -1,3 +1,3 @@
 exports.UserRole = {
-    USER: 'USER'
+  USER: 'USER'
 }

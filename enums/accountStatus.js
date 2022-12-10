@@ -1,9 +1,9 @@
 exports.AccountStatus = {
-    ACTIVE: 'ACTIVE',
-    SUSPENDED: 'SUSPENDED'
+  ACTIVE: 'ACTIVE',
+  SUSPENDED: 'SUSPENDED'
 };
 
 exports.OnlineStatus = {
-    ONLINE: 'ONLINE',
-    OFFLINE: 'OFFLINE'
+  ONLINE: 'ONLINE',
+  OFFLINE: 'OFFLINE'
 };

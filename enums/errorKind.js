@@ -1,3 +1,3 @@
 exports.ErrorKind = {
-    ID: 'ObjectId'
+  ID: 'ObjectId'
 }
