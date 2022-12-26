@@ -10,10 +10,10 @@ const fs = require('fs');
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
 const { 
-    generateClient, 
-    generateCleanModel, 
-    generateModificationForDb,
-    generateModification 
+	generateClient, 
+	generateCleanModel, 
+	generateModificationForDb,
+	generateModification 
 } = require('../helpers/generateModels');
 const { generateDate, generateTime } = require('../helpers/timeDate');
 
@@ -26,874 +26,886 @@ const { parseJwt } = require('../middlewares/common');
 
 exports.getAll = (req, res) => {
 
-    const token = req.headers.authorization;
-    const loggedInUser = parseJwt(token);
+	const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
 
-    let skip = 0;
-    if(parseInt(req.query.page) === 1) {
-        skip = 0;
-    } else {
-        skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
-    }
+	let skip = 0;
+	if(parseInt(req.query.page) === 1) {
+		skip = 0;
+	} else {
+		skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
+	}
 
-    const filters = {};
+	const filters = {};
 
-    if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
-        filters.active = true;
-    }
+	if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
+		filters.active = true;
+	}
 
-    if (req.query.name) {
-        filters.$or = [
-            { firstname: {$regex: req.query.name, $options: 'i'} },
-            { lastname: {$regex: req.query.name, $options: 'i'} }  
-        ];
-    }
-    if (req.query.phone_number) {
-        filters.phone_number = { $regex: req.query.phone_number, $options: 'i' };
-    }
-    if (req.params.username) {
-        filters.username = { $regex: req.query.username, $options: 'i' };
-    }
-    if (req.params.email) {
-        filters.email = { $regex: req.query.email, $options: 'i' };
-    }
+	if (req.query.name) {
+		filters.$or = [
+			{ firstname: {$regex: req.query.name, $options: 'i'} },
+			{ lastname: {$regex: req.query.name, $options: 'i'} }  
+		];
+	}
+	if (req.query.phone_number) {
+		filters.phone_number = { $regex: req.query.phone_number, $options: 'i' };
+	}
+	if (req.params.username) {
+		filters.username = { $regex: req.query.username, $options: 'i' };
+	}
+	if (req.params.email) {
+		filters.email = { $regex: req.query.email, $options: 'i' };
+	}
 
-    Client.find(filters)
-        .sort({ _id: 'desc' })
-        .skip(skip)
-        .limit(parseInt(req.query.take))
-        .then(clients => {
-            Client.find(filters)
-                .count()
-                .then(countRes => {
-                    const clientsToSend = [];
+	Client.find(filters)
+		.sort({ _id: 'desc' })
+		.skip(skip)
+		.limit(parseInt(req.query.take))
+		.then(clients => {
+			Client.find(filters)
+        .count()
+        .then(countRes => {
+          const clientsToSend = [];
 
-                    for(const client of clients) {
-                        clientsToSend.push(generateClient(client));
-                    }
+          for(const client of clients) {
+            clientsToSend.push(generateClient(client));
+          }
 
-                    res.status(statusCodes.success).json({
-                        page: parseInt(req.query.page),
-                        total: countRes,
-                        list: clientsToSend
-                    });
-                })
-                .catch(error => {
-                    console.log(error);
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
-                        error
-                    });
-                })
+          res.status(statusCodes.success).json({
+            page: parseInt(req.query.page),
+            total: countRes,
+            list: clientsToSend
+          });
         })
         .catch(error => {
-            console.log(error);
-            res.status(statusCodes.server_error).json({
-                message: errorMessages.internal,
-                error: {}
-            });
+          res.status(statusCodes.server_error).json({
+            message: errorMessages.internal_tr,
+            actual_message: errorMessages.internal,
+            error: error
+          });
         })
+		})
+		.catch(error => {
+			res.status(statusCodes.server_error).json({
+				message: errorMessages.internal_tr,
+				actual_message: errorMessages.internal,
+				error: error
+			});
+		})
 }
 
 exports.getSoftDeletedClients = (req, res) => {
 
-    const token = req.headers.authorization;
-    const loggedInUser = parseJwt(token);
+	const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
 
-    if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.no_permission,
-            rolesAllowed: AdminRole.SUPER_ADMIN
-        });
-    } else {
-        let skip = 0;
-        if(parseInt(req.query.page) === 1) {
-            skip = 0;
-        } else {
-            skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
-        }
-    
-        const filters = { active: false };
-    
-        Client.find({ ...filters })
-            .sort({ _id: 'asc' })
-            .skip(skip)
-            .limit(parseInt(req.query.take))
-            .then(clients => {
-                Client.find({ ...filters })
-                    .count()
-                    .then(countRes => {
-                        const clientsToSend = [];
-    
-                        for(const client of clients) {
-                            clientsToSend.push(generateClient(client));
-                        }
-    
-                        res.status(statusCodes.success).json({
-                            page: parseInt(req.query.page),
-                            total: countRes,
-                            list: clientsToSend
-                        });
-                    })
-                    .catch(error => {
-                        res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal,
-                            error
-                        });
-                    })
-            })
-            .catch(error => {
-                res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal,
-                    error
-                });
-            })
-    }
+	if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
+		res.status(statusCodes.user_error).json({
+			message: errorMessages.no_permission_tr,
+			actual_message: errorMessages.no_permission,
+			rolesAllowed: AdminRole.SUPER_ADMIN
+		});
+	} else {
+		let skip = 0;
+
+		if(parseInt(req.query.page) === 1) {
+			skip = 0;
+		} else {
+			skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
+		}
+
+		const filters = { active: false };
+	
+		Client.find({ ...filters })
+			.sort({ _id: 'asc' })
+			.skip(skip)
+			.limit(parseInt(req.query.take))
+			.then(clients => {
+				Client.find({ ...filters })
+					.count()
+					.then(countRes => {
+						const clientsToSend = [];
+
+						for(const client of clients) {
+							clientsToSend.push(generateClient(client));
+						}
+
+						res.status(statusCodes.success).json({
+							page: parseInt(req.query.page),
+							total: countRes,
+							list: clientsToSend
+						});
+					})
+					.catch(error => {
+						res.status(statusCodes.server_error).json({
+							message: errorMessages.internal_tr,
+							actual_message: errorMessages.internal,
+							error: error
+						});
+					})
+			})
+			.catch(error => {
+				res.status(statusCodes.server_error).json({
+					message: errorMessages.internal_tr,
+					actual_message: errorMessages.internal,
+					error: error
+				});
+			})
+	}
 }
 
 exports.getSingle = (req, res) => {
-    const id = req.params.id;
+	const id = req.params.id;
 
-    if(id) {
-        Client.find({ _id: id, active: true })
-            .then(clients => {
-                if(clients.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', id)
-                    });
-                } else {
-                    res.status(statusCodes.success).send(generateClient(clients[0]));
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
-        });
-    }
+	if(id) {
+		Client.find({ _id: id, active: true })
+			.then(clients => {
+				if(clients.length === 0) {
+					res.status(statusCodes.user_error).json({
+						message: errorMessages.client_not_exist_tr,
+						actual_message: errorMessages.not_exist('Clients', id)
+					});
+				} else {
+					res.status(statusCodes.success).send(generateClient(clients[0]));
+				}
+			})
+			.catch(error => {
+				if(error.kind === ErrorKind.ID) {
+					res.status(statusCodes.user_error).json({
+						message: errorMessages.invalid_id_tr,
+						actual_message: errorMessages.invalid_id(id)
+					});
+				} else {
+					res.status(statusCodes.server_error).json({
+						message: errorMessages.internal_tr,
+						actual_message: errorMessages.internal,
+						error: error
+					});
+				}
+			})
+	} else {
+		res.status(statusCodes.user_error).json({
+			message: errorMessages.id_missing_tr,
+			actual_message: errorMessages.id_missing
+		});
+	}
 }
 
 exports.addNew = (req, res) => {
-    const token = req.headers.authorization;
+	const token = req.headers.authorization;
 
-    const data = { 
-        ...req.body,
-        number_of_albums: 0,
-        active: true,
-        account_status: AccountStatus.ACTIVE,
+	const data = { 
+		...req.body,
+		number_of_albums: 0,
+		active: true,
+		account_status: AccountStatus.ACTIVE,
 
-        created_date: generateDate(),
-        created_time: generateTime(),
+		created_date: generateDate(),
+		created_time: generateTime(),
 
-        created_by: JSON.stringify(generateCleanModel(parseJwt(token)))
-    };
+		created_by: JSON.stringify(generateCleanModel(parseJwt(token)))
+	};
 
-    if(data.firstname === '' || !data.firstname) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Firstname')
-        })
-    } else if(data.lastname === '' || !data.lastname) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Lastname')
-        })
-    } else if(data.username === '' || !data.username) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Username')
-        })
-    } else if(data.phone_number === '' || !data.phone_number) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Phone number')
-        })
-    } else if(data.email === '' || !data.email) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Email')
-        })
-    } else if(data.password === '' || !data.password) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Password')
-        })
-    } else {
-        Client.find({ email: data.email })
-            .then(clients => {
-                if(clients.length > 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: `User with email ${ data.email } already exists.`
-                    })
-                } else {
-                    data['password'] = bcrypt.hashSync(req.body.password, 10);
-                    data['first_password'] = req.body.password;
+	if(data.firstname === '' || !data.firstname) {
+    res.status(statusCodes.user_error).json({
+      message: errorMessages.required_field_tr.firstname,
+      actual_message: errorMessages.required_field('firstname')
+    });
+	} else if(data.lastname === '' || !data.lastname) {
+    res.status(statusCodes.user_error).json({
+      message: errorMessages.required_field_tr.lastname,
+      actual_message: errorMessages.required_field('lastname')
+    });
+	} else if(data.username === '' || !data.username) {
+    res.status(statusCodes.user_error).json({
+      message: errorMessages.required_field_tr.username,
+      actual_message: errorMessages.required_field('username')
+    });
+	} else if(data.phone_number === '' || !data.phone_number) {
+    res.status(statusCodes.user_error).json({
+      message: errorMessages.required_field_tr.phone_number,
+      actual_message: errorMessages.required_field('phone_number')
+    });
+	} else if(data.email === '' || !data.email) {
+    res.status(statusCodes.user_error).json({
+      message: errorMessages.required_field_tr.email,
+      actual_message: errorMessages.required_field('email')
+    });
+	} else if(data.password === '' || !data.password) {
+    res.status(statusCodes.user_error).json({
+      message: errorMessages.required_field_tr.password,
+      actual_message: errorMessages.required_field('password')
+    });
+	} else {
+    Client.find({ email: data.email })
+      .then(clients => {
+        if(clients.length > 0) {
+          res.status(statusCodes.user_error).json({
+            message: `User with email ${ data.email } already exists.`
+          })
+        } else {
+          data['password'] = bcrypt.hashSync(req.body.password, 10);
+          data['first_password'] = req.body.password;
 
-                    Client.insertMany({ ...data })
-                        .then(_ => {
-                            Client.find({ email: data.email })
-                                .then(newClient => {
-                                    res.status(statusCodes.success).json({
-                                        message: 'Client has been added.',
-                                        client: generateClient(newClient[0])
-                                    });
-                                })
-                                .catch(error => {
-                                    console.log(error);
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal,
-                                        error
-                                    });
-                                })
-                        })
-                        .catch(error => {
-                            console.log(error);
-                            res.status(statusCodes.server_error).json({
-                                message: errorMessages.internal,
-                                error
-                            });
-                        });
-                }
-            })
-            .catch(error => {
-                console.log(error);
-                res.status(statusCodes.server_error).json({
+          Client.insertMany({ ...data })
+            .then(_ => {
+              Client.find({ email: data.email })
+                .then(newClient => {
+                  res.status(statusCodes.success).json({
+                    message: 'Client has been added.',
+                    client: generateClient(newClient[0])
+                  });
+                })
+                .catch(error => {
+                  res.status(statusCodes.server_error).json({
                     message: errorMessages.internal,
                     error
-                });
+                  });
+                })
             })
-    }
+            .catch(error => {
+              res.status(statusCodes.server_error).json({
+                message: errorMessages.internal,
+                error
+              });
+            });
+        }
+      })
+      .catch(error => {
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal,
+          error
+        });
+      })
+	}
 }
 
 exports.edit = (req, res) => {
-    const id = req.params.id;
-    
-    const token = req.headers.authorization;
-    const loggedInUser = parseJwt(token);
+		const id = req.params.id;
+		
+		const token = req.headers.authorization;
+		const loggedInUser = parseJwt(token);
 
-    if(id) {
-        Client.find({ _id: id, active: true })
-            .then(clients => {
-                if(clients.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', id)
-                    });
-                } else {
-                    const modification = generateModificationForDb({
-                        cluster: 'Client',
-                        id,
-                        modification: ModificationType.EDITED_CLIENT,
-                        modified_by: generateCleanModel(loggedInUser)
-                    });
+		if(id) {
+				Client.find({ _id: id, active: true })
+						.then(clients => {
+								if(clients.length === 0) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.not_exist('Client', id)
+										});
+								} else {
+										const modification = generateModificationForDb({
+												cluster: 'Client',
+												id,
+												modification: ModificationType.EDITED_CLIENT,
+												modified_by: generateCleanModel(loggedInUser)
+										});
 
-                    const data = { 
-                        ...req.body,
-                        
-                        modified_date: modification.modified_date,
-                        modified_by: modification.modified_by,
-                        modified_by_id: modification.modified_by_id
-                    };
+										const data = { 
+												...req.body,
+												
+												modified_date: modification.modified_date,
+												modified_by: modification.modified_by,
+												modified_by_id: modification.modified_by_id
+										};
 
-                    Client.updateOne(
-                        { _id: id },
-                        { ...data }
-                    )
-                    .then(_ => {
-                        Client.find({ _id: id })
-                            .then(newClient => {
-                                Modification.insertMany(modification)
-                                    .then(() => {
-                                        res.status(statusCodes.success).json({
-                                            message: `User has been updated`,
-                                            client: generateClient(newClient[0])
-                                        });
-                                    })
-                                    .catch(error => {
-                                        res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal,
-                                            error
-                                        });
-                                    })
-                            })
-                            .catch(error => {
-                                if(error.kind === ErrorKind.ID) {
-                                    res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id(id)
-                                    });
-                                } else {
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal,
-                                        error
-                                    });
-                                }
-                            })
-                    })
-                    .catch(error => {
-                        if(error.kind === ErrorKind.ID) {
-                            res.status(statusCodes.user_error).json({
-                                message: errorMessages.invalid_id(id)
-                            });
-                        } else {
-                            res.status(statusCodes.server_error).json({
-                                message: errorMessages.internal,
-                                error
-                            });
-                        }
-                    })
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
-        });
-    }
+										Client.updateOne(
+												{ _id: id },
+												{ ...data }
+										)
+										.then(_ => {
+												Client.find({ _id: id })
+														.then(newClient => {
+																Modification.insertMany(modification)
+																		.then(() => {
+																				res.status(statusCodes.success).json({
+																						message: `User has been updated`,
+																						client: generateClient(newClient[0])
+																				});
+																		})
+																		.catch(error => {
+																				res.status(statusCodes.server_error).json({
+																						message: errorMessages.internal,
+																						error
+																				});
+																		})
+														})
+														.catch(error => {
+																if(error.kind === ErrorKind.ID) {
+																		res.status(statusCodes.user_error).json({
+																				message: errorMessages.invalid_id(id)
+																		});
+																} else {
+																		res.status(statusCodes.server_error).json({
+																				message: errorMessages.internal,
+																				error
+																		});
+																}
+														})
+										})
+										.catch(error => {
+												if(error.kind === ErrorKind.ID) {
+														res.status(statusCodes.user_error).json({
+																message: errorMessages.invalid_id(id)
+														});
+												} else {
+														res.status(statusCodes.server_error).json({
+																message: errorMessages.internal,
+																error
+														});
+												}
+										})
+								}
+						})
+						.catch(error => {
+								if(error.kind === ErrorKind.ID) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.invalid_id(id)
+										});
+								} else {
+										res.status(statusCodes.server_error).json({
+												message: errorMessages.internal,
+												error
+										});
+								}
+						})
+		} else {
+				res.status(statusCodes.user_error).json({
+						message: errorMessages.id_missing
+				});
+		}
 }
 
 exports.changeProfileImage = (req, res) => {
-    const path = './images/profile_images/';
+		const path = './images/profile_images/';
 
-    const _id = req.params.id;
-    const image = req.files.image;
+		const _id = req.params.id;
+		const image = req.files.image;
 
-    if (_id) {
-        Client.find({ _id })
-            .then(clients => {
-                if (clients.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', id)
-                    });
-                } else {
-                    const client = clients[0];
+		if (_id) {
+				Client.find({ _id })
+						.then(clients => {
+								if (clients.length === 0) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.not_exist('Client', id)
+										});
+								} else {
+										const client = clients[0];
 
-                    if (client.profile_image) {
-                        fs.unlinkSync(path + client.profile_image);
-                    }
+										if (client.profile_image) {
+												fs.unlinkSync(path + client.profile_image);
+										}
 
-                    const newFileName = clients[0]._id + '_' + image.name;
-                    image.mv(path + newFileName);
+										const newFileName = clients[0]._id + '_' + image.name;
+										image.mv(path + newFileName);
 
-                    Client.updateOne(
-                        { _id },
-                        { profile_image: newFileName }
-                    )
-                    .then(() => {
-                        client.profile_image = newFileName;
+										Client.updateOne(
+												{ _id },
+												{ profile_image: newFileName }
+										)
+										.then(() => {
+												client.profile_image = newFileName;
 
-                        res.status(statusCodes.success).json({
-                            message: 'Image has been changed.',
-                            user: generateCleanModel(client)
-                        });
-                    })
-                    .catch(error => {
-                        res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal,
-                            error
-                        });
-                    })
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
-        });
-    }
+												res.status(statusCodes.success).json({
+														message: 'Image has been changed.',
+														user: generateCleanModel(client)
+												});
+										})
+										.catch(error => {
+												res.status(statusCodes.server_error).json({
+														message: errorMessages.internal,
+														error
+												});
+										})
+								}
+						})
+						.catch(error => {
+								if(error.kind === ErrorKind.ID) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.invalid_id(id)
+										});
+								} else {
+										res.status(statusCodes.server_error).json({
+												message: errorMessages.internal,
+												error
+										});
+								}
+						})
+		} else {
+				res.status(statusCodes.user_error).json({
+						message: errorMessages.id_missing
+				});
+		}
 
 }
 
 exports.changeAccoutStatus = (req, res) => {
-    const _id = req.params.id;
-    const status = req.params.status;
+		const _id = req.params.id;
+		const status = req.params.status;
 
-    const availableStatuses = [];
+		const availableStatuses = [];
 
-    for (const [key] of Object.entries(AccountStatus)) {
-        availableStatuses.push(key);
-    }
+		for (const [key] of Object.entries(AccountStatus)) {
+				availableStatuses.push(key);
+		}
 
-    if (_id) {  
-        if (status !== AccountStatus.ACTIVE && status !== AccountStatus.SUSPENDED) {
-            res.status(statusCodes.user_error).json({
-                message: `Account status can only be changed to ${ JSON.stringify(availableStatuses) }`
-            });
-        } else {
-            Client.find({ _id })
-                .then(clients => {
-                    if (clients.length === 0) {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.not_exist('Client', id)
-                        });
-                    } else {
-                        if (clients[0].account_status === AccountStatus.SUSPENDED && status === AccountStatus.SUSPENDED) {
-                            res.status(statusCodes.user_error).json({
-                                message: `Account status ${ AccountStatus.SUSPENDED } can only be changed to ${ AccountStatus.ACTIVE }`
-                            });
-                        } else if (clients[0].account_status === AccountStatus.ACTIVE && status === AccountStatus.ACTIVE) {
-                            res.status(statusCodes.user_error).json({
-                                message: `Account status ${ AccountStatus.ACTIVE } can only be changed to ${ AccountStatus.SUSPENDED }`
-                            });
-                        } else {
-                            Client.updateOne(
-                                { _id },
-                                { account_status: status }
-                            )
-                            .then(() => {
-                                res.status(statusCodes.success).json({
-                                    message: `Account status has been updated to ${ status }`
-                                });
-                            })
-                            .catch(() => {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal
-                                });
-                            })
-                        }
-                    }
-                })
-                .catch(error => {
-                    if(error.kind === ErrorKind.ID) {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.invalid_id(id)
-                        });
-                    } else {
-                        res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal,
-                            error
-                        });
-                    }
-                })
-        }
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
-        });
-    }
+		if (_id) {  
+				if (status !== AccountStatus.ACTIVE && status !== AccountStatus.SUSPENDED) {
+						res.status(statusCodes.user_error).json({
+								message: `Account status can only be changed to ${ JSON.stringify(availableStatuses) }`
+						});
+				} else {
+						Client.find({ _id })
+								.then(clients => {
+										if (clients.length === 0) {
+												res.status(statusCodes.user_error).json({
+														message: errorMessages.not_exist('Client', id)
+												});
+										} else {
+												if (clients[0].account_status === AccountStatus.SUSPENDED && status === AccountStatus.SUSPENDED) {
+														res.status(statusCodes.user_error).json({
+																message: `Account status ${ AccountStatus.SUSPENDED } can only be changed to ${ AccountStatus.ACTIVE }`
+														});
+												} else if (clients[0].account_status === AccountStatus.ACTIVE && status === AccountStatus.ACTIVE) {
+														res.status(statusCodes.user_error).json({
+																message: `Account status ${ AccountStatus.ACTIVE } can only be changed to ${ AccountStatus.SUSPENDED }`
+														});
+												} else {
+														Client.updateOne(
+																{ _id },
+																{ account_status: status }
+														)
+														.then(() => {
+																res.status(statusCodes.success).json({
+																		message: `Account status has been updated to ${ status }`
+																});
+														})
+														.catch(() => {
+																res.status(statusCodes.server_error).json({
+																		message: errorMessages.internal
+																});
+														})
+												}
+										}
+								})
+								.catch(error => {
+										if(error.kind === ErrorKind.ID) {
+												res.status(statusCodes.user_error).json({
+														message: errorMessages.invalid_id(id)
+												});
+										} else {
+												res.status(statusCodes.server_error).json({
+														message: errorMessages.internal,
+														error
+												});
+										}
+								})
+				}
+		} else {
+				res.status(statusCodes.user_error).json({
+						message: errorMessages.id_missing
+				});
+		}
 }
 
 exports.resetFirstPassword = (req, res) => {
-    const _id = req.params.id;
-    const data = {
-        first_password: req.body.first_password,
-        password: req.body.password,
-        rePassword: req.body.repeat_password
-    };
+		const _id = req.params.id;
+		const data = {
+				first_password: req.body.first_password,
+				password: req.body.password,
+				rePassword: req.body.repeat_password
+		};
 
-    if (_id) {
-        Client.find({ _id })
-            .then(clients => {
-                if (clients.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', _id)
-                    });
-                } else {
-                    if (data.first_password === clients[0].first_password) {
-                        if (data.password === data.rePassword) {
-                            const newPassword = bcrypt.hashSync(data.password, 10);
+		if (_id) {
+				Client.find({ _id })
+						.then(clients => {
+								if (clients.length === 0) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.not_exist('Client', _id)
+										});
+								} else {
+										if (data.first_password === clients[0].first_password) {
+												if (data.password === data.rePassword) {
+														const newPassword = bcrypt.hashSync(data.password, 10);
 
-                            Client.updateOne(
-                                { _id },
-                                { password: newPassword }
-                            )
-                            .then(_ => {
-                                const token = jwt.sign(
-                                    { ...generateCleanModel(clients[0]) }, 
-                                    process.env.SECRET,
-                                    { expiresIn: '1h' }
-                                );
-        
-                                res.status(200).json({
-                                    message: 'Logged in successfully.',
-                                    token,
-                                    user: generateCleanModel(clients[0])
-                                });
-                            })
-                            .catch(error => {
-                                console.log(error);
-                                if(error.kind === ErrorKind.ID) {
-                                    res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id(_id)
-                                    });
-                                } else {
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal,
-                                        error
-                                    });
-                                }
-                            })
-                        } else {
-                            res.status(statusCodes.user_error).json({
-                                message: 'Passwords do not match.'
-                            });
-                        }
-                    } else {
-                        res.status(statusCodes.user_error).json({
-                            message: 'Inserted password is not correct.'
-                        });
-                    }
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(_id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
-        });
-    }
+														Client.updateOne(
+																{ _id },
+																{ password: newPassword }
+														)
+														.then(_ => {
+																const token = jwt.sign(
+																		{ ...generateCleanModel(clients[0]) }, 
+																		process.env.SECRET,
+																		{ expiresIn: '1h' }
+																);
+				
+																res.status(200).json({
+																		message: 'Logged in successfully.',
+																		token,
+																		user: generateCleanModel(clients[0])
+																});
+														})
+														.catch(error => {
+																console.log(error);
+																if(error.kind === ErrorKind.ID) {
+																		res.status(statusCodes.user_error).json({
+																				message: errorMessages.invalid_id(_id)
+																		});
+																} else {
+																		res.status(statusCodes.server_error).json({
+																				message: errorMessages.internal,
+																				error
+																		});
+																}
+														})
+												} else {
+														res.status(statusCodes.user_error).json({
+																message: 'Passwords do not match.'
+														});
+												}
+										} else {
+												res.status(statusCodes.user_error).json({
+														message: 'Inserted password is not correct.'
+												});
+										}
+								}
+						})
+						.catch(error => {
+								if(error.kind === ErrorKind.ID) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.invalid_id(_id)
+										});
+								} else {
+										res.status(statusCodes.server_error).json({
+												message: errorMessages.internal,
+												error
+										});
+								}
+						})
+		} else {
+				res.status(statusCodes.user_error).json({
+						message: errorMessages.id_missing
+				});
+		}
 }
 
 exports.softDelete = (req, res) => {
-    const id = req.params.id;
+		const id = req.params.id;
 
-    const token = req.headers.authorization;
-    const loggedInUser = parseJwt(token);
+		const token = req.headers.authorization;
+		const loggedInUser = parseJwt(token);
 
-    if(id) {
-        Client.find({ _id: id })
-            .then(clients => {
-                if(clients.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', id)
-                    });
-                } else {
-                    const modification = generateModificationForDb({
-                        cluster: 'Client',
-                        id,
-                        modification: ModificationType.SOFT_DELETED_CLIENT,
-                        modified_by: generateCleanModel(loggedInUser)
-                    });
+		if(id) {
+				Client.find({ _id: id })
+						.then(clients => {
+								if(clients.length === 0) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.not_exist('Client', id)
+										});
+								} else {
+										const modification = generateModificationForDb({
+												cluster: 'Client',
+												id,
+												modification: ModificationType.SOFT_DELETED_CLIENT,
+												modified_by: generateCleanModel(loggedInUser)
+										});
 
-                    Client.updateOne(
-                        { _id: id },
-                        { 
-                            active: false,
-                            deleted_by: JSON.stringify(generateCleanModel(loggedInUser))
-                        }
-                    )
-                    .then(_ => {
-                        Modification.insertMany(modification)
-                            .then(newModification => {
-                                res.status(statusCodes.success).json({
-                                    message: `User ${ generateClient(clients[0]).fullname } has been deleted.`,
-                                    modification: generateModification(newModification[0])
-                                });
-                            })
-                            .catch(error => {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
-                                    error
-                                });
-                            })
-                    })
-                    .catch(error => {
-                        if(error.kind === ErrorKind.ID) {
-                            res.status(statusCodes.user_error).json({
-                                message: errorMessages.invalid_id(id)
-                            });
-                        } else {
-                            res.status(statusCodes.server_error).json({
-                                message: errorMessages.internal,
-                                error
-                            });
-                        }
-                    });
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
-        });
-    }
+										Client.updateOne(
+												{ _id: id },
+												{ 
+														active: false,
+														deleted_by: JSON.stringify(generateCleanModel(loggedInUser))
+												}
+										)
+										.then(_ => {
+												Modification.insertMany(modification)
+														.then(newModification => {
+																res.status(statusCodes.success).json({
+																		message: `User ${ generateClient(clients[0]).fullname } has been deleted.`,
+																		modification: generateModification(newModification[0])
+																});
+														})
+														.catch(error => {
+																res.status(statusCodes.server_error).json({
+																		message: errorMessages.internal,
+																		error
+																});
+														})
+										})
+										.catch(error => {
+												if(error.kind === ErrorKind.ID) {
+														res.status(statusCodes.user_error).json({
+																message: errorMessages.invalid_id(id)
+														});
+												} else {
+														res.status(statusCodes.server_error).json({
+																message: errorMessages.internal,
+																error
+														});
+												}
+										});
+								}
+						})
+						.catch(error => {
+								if(error.kind === ErrorKind.ID) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.invalid_id(id)
+										});
+								} else {
+										res.status(statusCodes.server_error).json({
+												message: errorMessages.internal,
+												error
+										});
+								}
+						})
+		} else {
+				res.status(statusCodes.user_error).json({
+						message: errorMessages.id_missing
+				});
+		}
 }
 
 exports.recover = (req, res) => {
-    const id = req.params.id;
+		const id = req.params.id;
 
-    const token = req.headers.authorization;
-    const loggedInUser = parseJwt(token);
+		const token = req.headers.authorization;
+		const loggedInUser = parseJwt(token);
 
-    if(id) {
-        Client.find({ _id: id })
-            .then(clients => {
-                if(clients.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', id)
-                    });
-                } else {
-                    if(clients[0].active) {
-                        res.status(statusCodes.user_error).json({
-                            message: 'User is already active.'
-                        });
-                    } else {
-                        const modification = generateModificationForDb({
-                            cluster: 'Client',
-                            id,
-                            modification: ModificationType.RECOVERED_CLIENT,
-                            modified_by: generateCleanModel(loggedInUser)
-                        });
+		if(id) {
+				Client.find({ _id: id })
+						.then(clients => {
+								if(clients.length === 0) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.not_exist('Client', id)
+										});
+								} else {
+										if(clients[0].active) {
+												res.status(statusCodes.user_error).json({
+														message: 'User is already active.'
+												});
+										} else {
+												const modification = generateModificationForDb({
+														cluster: 'Client',
+														id,
+														modification: ModificationType.RECOVERED_CLIENT,
+														modified_by: generateCleanModel(loggedInUser)
+												});
 
-                        Client.updateOne(
-                            { _id: id },
-                            { active: true }
-                        )
-                        .then(_ => {
-                            Modification.insertMany(modification)
-                                .then(newModification => {
-                                    res.status(statusCodes.success).json({
-                                        message: `User ${ generateClient(clients[0]).fullname } has been recovered.`,
-                                        user: generateClient(clients[0]),
-                                        modification: generateModification(newModification[0])
-                                    });
-                                })
-                                .catch(error => {
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal,
-                                        error
-                                    });
-                                })
-                        })
-                        .catch(error => {
-                            if(error.kind === ErrorKind.ID) {
-                                res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(id)
-                                });
-                            } else {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
-                                    error
-                                });
-                            }
-                        });
-                    }
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
-        });
-    }
+												Client.updateOne(
+														{ _id: id },
+														{ active: true }
+												)
+												.then(_ => {
+														Modification.insertMany(modification)
+																.then(newModification => {
+																		res.status(statusCodes.success).json({
+																				message: `User ${ generateClient(clients[0]).fullname } has been recovered.`,
+																				user: generateClient(clients[0]),
+																				modification: generateModification(newModification[0])
+																		});
+																})
+																.catch(error => {
+																		res.status(statusCodes.server_error).json({
+																				message: errorMessages.internal,
+																				error
+																		});
+																})
+												})
+												.catch(error => {
+														if(error.kind === ErrorKind.ID) {
+																res.status(statusCodes.user_error).json({
+																		message: errorMessages.invalid_id(id)
+																});
+														} else {
+																res.status(statusCodes.server_error).json({
+																		message: errorMessages.internal,
+																		error
+																});
+														}
+												});
+										}
+								}
+						})
+						.catch(error => {
+								if(error.kind === ErrorKind.ID) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.invalid_id(id)
+										});
+								} else {
+										res.status(statusCodes.server_error).json({
+												message: errorMessages.internal,
+												error
+										});
+								}
+						})
+		} else {
+				res.status(statusCodes.user_error).json({
+						message: errorMessages.id_missing
+				});
+		}
 }
 
 exports.delete = (req, res) => {
 
-    const token = req.headers.authorization;
-    const loggedInUser = parseJwt(token);
+		const token = req.headers.authorization;
+		const loggedInUser = parseJwt(token);
 
-    if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.no_permission,
-            rolesAllowed: AdminRole.SUPER_ADMIN
-        });
-    } else {
-        const id = req.params.id;
-    
-        if(id) {
-            Client.find({ _id: id })
-                .then(clients => {
-                    if(clients.length === 0) {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.not_exist('Client', id)
-                        });
-                    } else {
-                        Client.deleteOne({ _id: id })
-                            .then(_ => {
-                                res.status(statusCodes.success).json({
-                                    message: `User ${ generateClient(clients[0]).fullname } has been deleted permanently.`
-                                })
-                            })
-                            .catch(error => {
-                                if(error.kind === ErrorKind.ID) {
-                                    res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id(id)
-                                    });
-                                } else {
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal,
-                                        error
-                                    });
-                                }
-                            })
-                    }
-                })
-                .catch(error => {
-                    if(error.kind === ErrorKind.ID) {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.invalid_id(id)
-                        });
-                    } else {
-                        res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal,
-                            error
-                        });
-                    }
-                })
-        } else {
-            res.status(statusCodes.user_error).json({
-                message: errorMessages.id_missing
-            });
-        }
-    }
+		if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
+				res.status(statusCodes.user_error).json({
+						message: errorMessages.no_permission,
+						rolesAllowed: AdminRole.SUPER_ADMIN
+				});
+		} else {
+				const id = req.params.id;
+		
+				if(id) {
+						Client.find({ _id: id })
+								.then(clients => {
+										if(clients.length === 0) {
+												res.status(statusCodes.user_error).json({
+														message: errorMessages.not_exist('Client', id)
+												});
+										} else {
+												Client.deleteOne({ _id: id })
+														.then(_ => {
+																res.status(statusCodes.success).json({
+																		message: `User ${ generateClient(clients[0]).fullname } has been deleted permanently.`
+																})
+														})
+														.catch(error => {
+																if(error.kind === ErrorKind.ID) {
+																		res.status(statusCodes.user_error).json({
+																				message: errorMessages.invalid_id(id)
+																		});
+																} else {
+																		res.status(statusCodes.server_error).json({
+																				message: errorMessages.internal,
+																				error
+																		});
+																}
+														})
+										}
+								})
+								.catch(error => {
+										if(error.kind === ErrorKind.ID) {
+												res.status(statusCodes.user_error).json({
+														message: errorMessages.invalid_id(id)
+												});
+										} else {
+												res.status(statusCodes.server_error).json({
+														message: errorMessages.internal,
+														error
+												});
+										}
+								})
+				} else {
+						res.status(statusCodes.user_error).json({
+								message: errorMessages.id_missing
+						});
+				}
+		}
 }
 
 exports.invite = (req, res) => {
-    const id = req.params.id;
-    const email = req.body.email;
+		const id = req.params.id;
+		const email = req.body.email;
 
-    const token = req.headers.authorization;
-    const loggedInUser = parseJwt(token);
+		const token = req.headers.authorization;
+		const loggedInUser = parseJwt(token);
 
-    console.log(loggedInUser)
+		console.log(loggedInUser)
 
-    if (id) {
-        Client.find({ _id: id })
-            .then(clients => {
-                if (clients.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Client', id)
-                    });
-                } else {
-                    const transporter = nodemailer.createTransport({
-                        service: 'gmail',
-                        auth: {
-                            user: process.env.EMAIL,
-                            pass: process.env.EMAIL_PASSWORD
-                        }
-                    });
+		if (id) {
+				Client.find({ _id: id })
+						.then(clients => {
+								if (clients.length === 0) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.not_exist('Client', id)
+										});
+								} else {
+										const transporter = nodemailer.createTransport({
+												service: 'gmail',
+												auth: {
+														user: process.env.EMAIL,
+														pass: process.env.EMAIL_PASSWORD
+												}
+										});
 
-                    const mailOptions = {
-                        from: 'FotoDej',
-                        subject: 'Invite!',
-                        html: `
-                            <body style="padding: 0; margin: 0; background-color: rgba(223, 221, 220, 0.4);">
-                                <div style="width: 100%; background-color: #0a2c55; text-align: center; padding: 0.1rem;">
-                                    <h1 style="color: #ffffff">FotoDej</h1>
-                                </div>
-                            
-                                <div style="width: 100%; text-align: center; margin-top: 1rem;">
-                                    <h1 style="margin: 0;">Invite to login into FotoDej system</h1>
-                            
-                                    <h2 style="text-decoration: underline; margin: 0; margin-top: 2rem;">Email to login</h2>
-                                    <h3 style="margin: 0; font-weight: normal;">${ email ? email : clients[0].email }</h3>
-                            
-                                    <h2 style="text-decoration: underline; margin: 0; margin-top: 1rem;">Password to login</h2>
-                                    <h3 style="margin: 0; font-weight: normal;">${ clients[0].first_password }</h3>
-                                </div>
-                            </body>
-                        `
-                    };
+										const mailOptions = {
+												from: 'FotoDej',
+												subject: 'Invite!',
+												html: `
+														<body style="padding: 0; margin: 0; background-color: rgba(223, 221, 220, 0.4);">
+																<div style="width: 100%; background-color: #0a2c55; text-align: center; padding: 0.1rem;">
+																		<h1 style="color: #ffffff">FotoDej</h1>
+																</div>
+														
+																<div style="width: 100%; text-align: center; margin-top: 1rem;">
+																		<h1 style="margin: 0;">Invite to login into FotoDej system</h1>
+														
+																		<h2 style="text-decoration: underline; margin: 0; margin-top: 2rem;">Email to login</h2>
+																		<h3 style="margin: 0; font-weight: normal;">${ email ? email : clients[0].email }</h3>
+														
+																		<h2 style="text-decoration: underline; margin: 0; margin-top: 1rem;">Password to login</h2>
+																		<h3 style="margin: 0; font-weight: normal;">${ clients[0].first_password }</h3>
+																</div>
+														</body>
+												`
+										};
 
-                    mailOptions['to'] = email ? email : clients[0].email;
+										mailOptions['to'] = email ? email : clients[0].email;
 
-                    // res.status(200).send('ok');
+										// res.status(200).send('ok');
 
-                    transporter.sendMail(mailOptions, (error, info) => {
-                        if (error) {
-                            console.log(error);
-                            res.status(statusCodes.server_error).json({
-                                message: 'Error while sending email!'
-                            });
-                        } else {
-                            const invite = {
-                                invited_client: generateCleanModel(clients[0]),
-                                invited_client_id: clients[0]._id,
+										transporter.sendMail(mailOptions, (error, info) => {
+												if (error) {
+														console.log(error);
+														res.status(statusCodes.server_error).json({
+																message: 'Error while sending email!'
+														});
+												} else {
+														const invite = {
+																invited_client: generateCleanModel(clients[0]),
+																invited_client_id: clients[0]._id,
 
-                                invited_by: loggedInUser,
-                                invited_by_id: loggedInUser.id,
+																invited_by: loggedInUser,
+																invited_by_id: loggedInUser.id,
 
-                                date: generateDate(),
-                                time: generateTime()
-                            };
+																date: generateDate(),
+																time: generateTime()
+														};
 
-                            Invite.insertMany(invite)
-                                .then(() => {
-                                    res.status(statusCodes.success).json({
-                                        message: 'Email has been sent successfully!'
-                                    });
-                                })
-                                .catch(error => {
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal
-                                    });
-                                })
-                        }
-                    });
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
-        });
-    }
+														Invite.insertMany(invite)
+																.then(() => {
+																		res.status(statusCodes.success).json({
+																				message: 'Email has been sent successfully!'
+																		});
+																})
+																.catch(error => {
+																		res.status(statusCodes.server_error).json({
+																				message: errorMessages.internal
+																		});
+																})
+												}
+										});
+								}
+						})
+						.catch(error => {
+								if(error.kind === ErrorKind.ID) {
+										res.status(statusCodes.user_error).json({
+												message: errorMessages.invalid_id(id)
+										});
+								} else {
+										res.status(statusCodes.server_error).json({
+												message: errorMessages.internal,
+												error
+										});
+								}
+						})
+		} else {
+				res.status(statusCodes.user_error).json({
+						message: errorMessages.id_missing
+				});
+		}
 }
