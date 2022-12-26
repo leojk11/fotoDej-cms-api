@@ -802,6 +802,8 @@ exports.invite = (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
 
+    console.log(loggedInUser)
+
     if (id) {
         Client.find({ _id: id })
             .then(clients => {
@@ -842,8 +844,11 @@ exports.invite = (req, res) => {
 
                     mailOptions['to'] = email ? email : clients[0].email;
 
+                    // res.status(200).send('ok');
+
                     transporter.sendMail(mailOptions, (error, info) => {
                         if (error) {
+                            console.log(error);
                             res.status(statusCodes.server_error).json({
                                 message: 'Error while sending email!'
                             });

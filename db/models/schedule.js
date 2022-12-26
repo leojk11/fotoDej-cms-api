@@ -17,11 +17,17 @@ const scheduleSchema = new Schema({
     type: String,
   },
 
-  location: {
+  location_1: {
+    type: String
+  },
+  location_2: {
     type: String
   },
 
-  contact_number: {
+  contact_number_1: {
+    type: String
+  },
+  contact_number_2: {
     type: String
   },
 

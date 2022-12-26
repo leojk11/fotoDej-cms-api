@@ -178,8 +178,10 @@ exports.generateSchedule = (schedule) => {
     date: schedule.date,
     time: schedule.time,
     user_id: schedule.user_id,
-    location: schedule.location,
-    contact_number: schedule.contact_number
+    location_1: schedule.location_1,
+    location_2: schedule.location_2,
+    contact_number_1: schedule.contact_number_1,
+    contact_number_2: schedule.contact_number_2
   };
 
   return newSchedule;
