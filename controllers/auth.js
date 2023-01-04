@@ -6,25 +6,31 @@ const jwt = require('jsonwebtoken');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
+const { successMessages } = require('../helpers/successMessages');
 const { generateCleanModel } = require('../helpers/generateModels');
+
+const { loginCommands } = require('../enums/commands');
 
 exports.adminLogin = (req, res) => {
     const data = { ...req.body };
 
     if(data.email === '' || !data.email) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.please_enter('email')
+            message: errorMessages.enter_email_tr,
+            actual_message: errorMessages.please_enter('email')
         });
     } else if(data.password === '' || !data.password) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.please_enter('password')
+            message: errorMessages.enter_password_tr,
+            actual_message: errorMessages.please_enter('password')
         });
     } else {
         Admin.find({ email: data.email })
             .then(admins => {
                 if(admins.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.user_not_exist(data.email)
+                        message: errorMessages.user_not_exist_tr,
+                        actual_message: errorMessages.user_not_exist(data.email)
                     });
                 } else {
                     if(bcrypt.compareSync(data.password, admins[0].password)) {
@@ -35,20 +41,23 @@ exports.adminLogin = (req, res) => {
                         );
 
                         res.status(statusCodes.success).json({
-                            message: 'Logged in successfully.',
+                            message: successMessages.logged_in_successfully_tr,
+                            actual_message: successMessages.logged_in_successfully,
                             token,
                             user: generateCleanModel(admins[0])
                         });
                     } else {
                         res.status(statusCodes.user_error).json({
-                            message: 'Incorrect password!'
+                            message: errorMessages.password_not_correct_tr,
+                            actual_message: errorMessages.password_not_correct
                         });
                     }
                 }
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal,
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
                     error
                 });
             })
@@ -60,29 +69,33 @@ exports.clientLogin = (req, res) => {
 
     if(data.email === '' || !data.email) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.please_enter('email')
+            message: errorMessages.enter_email_tr,
+            actual_message: errorMessages.please_enter('email')
         });
     } else if(data.password === '' || !data.password) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.please_enter('password')
+            message: errorMessages.enter_password_tr,
+            actual_message: errorMessages.please_enter('password')
         });
     } else {
         Client.find({ email: data.email })
             .then(users => {
                 if(users.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.user_not_exist(data.email)
+                        message: errorMessages.user_not_exist_tr,
+                        actual_message: errorMessages.user_not_exist(data.email)
                     });
                 } else {
                     if(users[0].active) {
                         if (users[0].first_password) {
                             if (data.password === users[0].first_password) {
                                 res.status(statusCodes.success).json({
-                                    message: 'RESET_REQUIRED'
+                                    command: loginCommands.RESET_REQUIRED
                                 });
                             } else {
                                 res.status(statusCodes.user_error).json({
-                                    message: 'Incorrect password!'
+                                    message: errorMessages.password_not_correct_tr,
+                                    actual_message: errorMessages.password_not_correct
                                 });
                             }
                         } else {
@@ -94,19 +107,22 @@ exports.clientLogin = (req, res) => {
                                 );
         
                                 res.status(statusCodes.success).json({
-                                    message: 'Logged in successfully.',
+                                    message: successMessages.logged_in_successfully_tr,
+                                    actual_message: successMessages.logged_in_successfully,
                                     token,
                                     user: generateCleanModel(users[0])
                                 });
                             } else {
                                 res.status(statusCodes.user_error).json({
-                                    message: 'Incorrect password!'
+                                    message: errorMessages.password_not_correct_tr,
+                                    actual_message: errorMessages.password_not_correct
                                 });
                             }
                         }
                     } else {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.user_not_exist(data.email)
+                            message: errorMessages.user_not_exist_tr,
+                            actual_message: errorMessages.user_not_exist(data.email)
                         });
                     }
                     
@@ -114,7 +130,8 @@ exports.clientLogin = (req, res) => {
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal,
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
                     error
                 });
             })

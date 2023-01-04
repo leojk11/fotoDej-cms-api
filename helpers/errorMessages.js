@@ -1,7 +1,15 @@
 exports.errorMessages = {
+  please_enter: (field) => `Plase enter your ${ field }.`,
+  enter_password_tr: 'errors.enterPassword',
+  enter_email_tr: 'errors.enterEmail',
+
+  user_not_exist: (email) => `User with email ${ email } does not exist.`,
+  user_not_exist_tr: 'errors.userNotExist',
+
   not_authorized: 'You are not authorized. Plase login!',
   passwords_not_match: 'errors.passwordsNotMatch',
-  password_not_correct: 'errors.passwordNotCorrect',
+  password_not_correct: 'Password is not correct.',
+  password_not_correct_tr: 'errors.passwordNotCorrect',
 
   internal: 'Internal server error!',
   internal_tr: 'errors.internal',
@@ -14,9 +22,7 @@ exports.errorMessages = {
 
   id_missing: 'Please provide ID!',
   id_missing_tr: 'errors.missingId',
-  please_enter: (field) => `Plase enter your ${ field }.`,
   not_exist: (cluster, id) => `[ID: ${ id }] does not exist in ${ cluster }.`,
-  user_not_exist: (email) => `User with email ${ email } does not exist.`,
   invalid_id: (id) => `[ID: ${ id }] is not valid.`,
   invalid_id_tr: 'errors.invalidId',
 

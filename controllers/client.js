@@ -557,7 +557,7 @@ exports.resetFirstPassword = (req, res) => {
                 );
 
                 res.status(200).json({
-                  message: successMessages.logged_in_successfully,
+                  message: successMessages.logged_in_successfully_tr,
                   actual_message: 'Logged in successfully',
                   token,
                   user: generateCleanModel(clients[0])
@@ -585,8 +585,8 @@ exports.resetFirstPassword = (req, res) => {
             }
           } else {
             res.status(statusCodes.user_error).json({
-              message: errorMessages.password_not_correct,
-              actual_message: 'Inserted password is not correct'
+              message: errorMessages.password_not_correct_tr,
+              actual_message: errorMessages.password_not_correct
             });
           }
         }

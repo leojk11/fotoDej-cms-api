@@ -1,5 +1,6 @@
 exports.successMessages = {
-  logged_in_successfully: 'success.loggedIn',
+  logged_in_successfully: 'Logged in successfully.',
+  logged_in_successfully_tr: 'success.loggedIn',
 
   document_updated: (id) => `Document [${ id }] has been updated.`,
   document_deleted: (id) => `Document [${ id }] has been deleted.`,
