@@ -48,6 +48,10 @@ const clientSchema = new Schema({
     required: true
   },
   created_by: {
+    type: Object,
+    required: true
+  },
+  created_by_id: {
     type: String,
     required: true
   },
@@ -59,7 +63,7 @@ const clientSchema = new Schema({
     type: String
   },
   modified_by: {
-    type: String
+    type: Object
   },
   modified_by_id: {
     type: String
