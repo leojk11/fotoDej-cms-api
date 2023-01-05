@@ -1,23 +1,16 @@
 const Album = require('../db/models/album');
 const Client = require('../db/models/client');
-const Modification = require('../db/models/modification');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
-const { 
-    generateAlbum, 
-    generateCleanModel,
-    generateModification,
-    generateModificationForDb
-} = require('../helpers/generateModels');
-const { generateDate } = require('../helpers/timeDate');
+const { successMessages } = require('../helpers/successMessages');
+const { generateAlbum, generateCleanModel } = require('../helpers/generateModels');
+const { generateDate, generateTime } = require('../helpers/timeDate');
 
 const { ErrorKind } = require('../enums/errorKind');
-const { ModificationType } = require('../enums/modificationType');
 
 const { parseJwt } = require('../middlewares/common');
 
-// get all
 exports.getAll = (req, res) => {
 
     let skip = 0;
@@ -57,22 +50,22 @@ exports.getAll = (req, res) => {
                     });
                 })
                 .catch(error => {
-                    console.log(error);
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 })
         })
         .catch(error => {
-            console.log(error);
             res.status(statusCodes.server_error).json({
-                message: errorMessages.internal,
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
                 error
             });
         })
 }
-// get single
+
 exports.getSingle = (req, res) => {
     const id = req.params.id;
 
@@ -81,7 +74,8 @@ exports.getSingle = (req, res) => {
             .then(albums => {
                 if(albums.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Album', id)
+                        message: errorMessages.album_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Album', id)
                     });
                 } else {
                     res.status(statusCodes.success).send(generateAlbum(albums[0]));
@@ -90,22 +84,25 @@ exports.getSingle = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
-                    })
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
+                    });
                 } else {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 }
             })
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
-// get all soft deleted
+
 exports.getAllSoftDeleted = (req, res) => {
 
     let skip = 0;
@@ -139,19 +136,21 @@ exports.getAllSoftDeleted = (req, res) => {
                 })
                 .catch(error => {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 })
         })
         .catch(error => {
             res.status(statusCodes.server_error).json({
-                message: errorMessages.internal,
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
                 error
             });
         })
 }
-// get all filtered by assigned_to
+
 exports.getAllAssignedTo = (req, res) => {
     const userId = req.params.userId;
 
@@ -191,22 +190,27 @@ exports.getAllAssignedTo = (req, res) => {
                     })
                     .catch(error => {
                         res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
+                            error
                         });
                     });
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
                 });
             });
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
-// get all filtered by assigned_by
+
 exports.getAllAssignedBy = (req, res) => {
     const userId = req.params.userId;
 
@@ -246,22 +250,27 @@ exports.getAllAssignedBy = (req, res) => {
                     })
                     .catch(error => {
                         res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
+                            error
                         });
                     });
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
                 });
             });
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
-// get all fitlered by created_by
+
 exports.getAllCreatedBy = (req, res) => {
     const userId = req.params.userId;
 
@@ -301,18 +310,23 @@ exports.getAllCreatedBy = (req, res) => {
                     })
                     .catch(error => {
                         res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
+                            error
                         });
                     });
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
                 });
             });
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
@@ -338,11 +352,13 @@ exports.addNew = (req, res) => {
 
     if(data.title === '' || !data.title) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Title')
+            message: errorMessages.required_field_tr.title,
+            actual_message: errorMessages.required_field('Title')
         });
     } else if(data.date === '' || !data.date) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Date')
+            message: errorMessages.required_field_tr.date,
+            actual_message: errorMessages.required_field('Date')
         });
     } else {
         if (data.assigned_to_id) {
@@ -350,7 +366,8 @@ exports.addNew = (req, res) => {
                 .then(clients => {
                     if (clients.length === 0) {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.not_exist('Client', data.assigned_to_id)
+                            message: errorMessages.client_not_exist_tr,
+                            actual_message: errorMessages.not_exist('Client', data.assigned_to_id)
                         });
                     } else {
                         data['assigned_to'] = JSON.stringify(generateCleanModel(clients[0]));
@@ -358,14 +375,15 @@ exports.addNew = (req, res) => {
                         Album.insertMany(data)
                             .then(addNewRes => {
                                 res.status(statusCodes.success).json({
-                                    message: 'Album has been created.',
+                                    message: successMessages.album_created_tr,
+                                    actual_message: successMessages.album_created,
                                     album: generateAlbum(addNewRes[0])
                                 });
                             })
                             .catch(error => {
-                                console.log(error)
                                 res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
                                     error
                                 });
                             })
@@ -375,50 +393,44 @@ exports.addNew = (req, res) => {
             Album.insertMany(data)
                 .then(addNewRes => {
                     res.status(statusCodes.success).json({
-                        message: 'Album has been created.',
+                        message: successMessages.album_created_tr,
+                        actual_message: successMessages.album_created,
                         album: generateAlbum(addNewRes[0])
                     });
                 })
                 .catch(error => {
-                    console.log(error)
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 })
         }
     }
 }
-// edit
+
 exports.edit = (req, res) => {
     const id = req.params.id;
 
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
 
-    console.log('body', req.body);
-
     if(id) {
         Album.find({ _id: id, active: true })
             .then(albums => {
                 if(albums.length === 0) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Album', id)
+                        message: errorMessages.album_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Album', id)
                     });
                 } else {
-                    const modification = generateModificationForDb({
-                        cluster: 'Album',
-                        id,
-                        modification: ModificationType.EDITED_ALBUM,
-                        modified_by: generateCleanModel(loggedInUser)
-                    });
-
                     const data = { 
                         ...req.body,
 
-                        modified_date: modification.modified_date,
-                        modified_by_id: modification.modified_by_id,
-                        modified_by: JSON.stringify(generateCleanModel(loggedInUser))
+                        modified_date: generateDate(),
+                        modified_time: generateTime(),
+                        modified_by_id: loggedInUser.id,
+                        modified_by: loggedInUser
                     };
 
                     if (req.body.assigned_to_id) {
@@ -426,7 +438,8 @@ exports.edit = (req, res) => {
                             .then(clients => {
                                 if (clients.length === 0) {
                                     res.status(statusCodes.user_error).json({
-                                        message: errorMessages.not_exist('Client', req.body.assigned_to_id)
+                                        message: errorMessages.client_not_exist_tr,
+                                        actual_message: errorMessages.not_exist('Client', req.body.assigned_to_id)
                                     });
                                 } else {
                                     data['assigned_to'] = JSON.stringify(generateCleanModel(clients[0]))
@@ -438,28 +451,23 @@ exports.edit = (req, res) => {
                                     .then(_ => {
                                         Album.find({ _id: id })
                                             .then(newAlbum => {
-                                                Modification.insertMany(modification)
-                                                    .then(newModification => {
-                                                        res.status(statusCodes.success).json({
-                                                            message: 'Album has been updated.',
-                                                            album: generateAlbum(newAlbum[0]),
-                                                            modification: generateModification(newModification[0])
-                                                        });
-                                                    })
-                                                    .catch(error => {
-                                                        res.status(statusCodes.server_error).json({
-                                                            message: errorMessages.internal
-                                                        });
-                                                    })
+                                                res.status(statusCodes.success).json({
+                                                    message: successMessages.album_updated_tr,
+                                                    actual_message: successMessages.album_updated,
+                                                    album: generateAlbum(newAlbum[0]),
+                                                });
                                             })
                                             .catch(error => {
                                                 if(error.kind === ErrorKind.ID) {
                                                     res.status(statusCodes.user_error).json({
-                                                        message: errorMessages.invalid_id(req.params.id)
+                                                        message: errorMessages.invalid_id_tr,
+                                                        actual_message: errorMessages.invalid_id(id)
                                                     });
                                                 } else {
                                                     res.status(statusCodes.server_error).json({
-                                                        message: errorMessages.internal
+                                                        message: errorMessages.internal_tr,
+                                                        actual_message: errorMessages.internal,
+                                                        error
                                                     });
                                                 }
                                             })
@@ -467,11 +475,14 @@ exports.edit = (req, res) => {
                                     .catch(error => {
                                         if(error.kind === ErrorKind.ID) {
                                             res.status(statusCodes.user_error).json({
-                                                message: errorMessages.invalid_id(req.params.id)
+                                                message: errorMessages.invalid_id_tr,
+                                                actual_message: errorMessages.invalid_id(id)
                                             });
                                         } else {
                                             res.status(statusCodes.server_error).json({
-                                                message: errorMessages.internal
+                                                message: errorMessages.internal_tr,
+                                                actual_message: errorMessages.internal,
+                                                error
                                             });
                                         }
                                     });
@@ -485,28 +496,23 @@ exports.edit = (req, res) => {
                         .then(_ => {
                             Album.find({ _id: id })
                                 .then(newAlbum => {
-                                    Modification.insertMany(modification)
-                                        .then(newModification => {
-                                            res.status(statusCodes.success).json({
-                                                message: 'Album has been updated.',
-                                                album: generateAlbum(newAlbum[0]),
-                                                modification: generateModification(newModification[0])
-                                            });
-                                        })
-                                        .catch(error => {
-                                            res.status(statusCodes.server_error).json({
-                                                message: errorMessages.internal
-                                            });
-                                        })
+                                    res.status(statusCodes.success).json({
+                                        message: successMessages.album_updated_tr,
+                                        actual_message: successMessages.album_updated,
+                                        album: generateAlbum(newAlbum[0])
+                                    });
                                 })
                                 .catch(error => {
                                     if(error.kind === ErrorKind.ID) {
                                         res.status(statusCodes.user_error).json({
-                                            message: errorMessages.invalid_id(req.params.id)
+                                            message: errorMessages.invalid_id_tr,
+                                            actual_message: errorMessages.invalid_id(id)
                                         });
                                     } else {
                                         res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal
+                                            message: errorMessages.internal_tr,
+                                            actual_message: errorMessages.internal,
+                                            error
                                         });
                                     }
                                 })
@@ -514,11 +520,14 @@ exports.edit = (req, res) => {
                         .catch(error => {
                             if(error.kind === ErrorKind.ID) {
                                 res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(req.params.id)
+                                    message: errorMessages.invalid_id_tr,
+                                    actual_message: errorMessages.invalid_id(id)
                                 });
                             } else {
                                 res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
+                                    error
                                 });
                             }
                         });
@@ -528,21 +537,25 @@ exports.edit = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(req.params.id)
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error
                     });
                 }
             })
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
-// add/edit images
+
 exports.images = (req, res) => {
     const id = req.params.id;
 
@@ -558,70 +571,56 @@ exports.images = (req, res) => {
                 .then(albums => {
                     if(albums.length === 0) {
                         res.status(statusCodes.user_error).then({
-                            message: errorMessages.not_exist('Album', id)
+                            message: errorMessages.album_not_exist_tr,
+                            actual_message: errorMessages.not_exist('Album', id)
                         });
                     } else {
-                        const modification = generateModificationForDb({
-                            cluster: 'Album',
-                            id,
-                            modification: ModificationType.ADDED_IMAGES,
-                            modified_by: generateCleanModel(loggedInUser),
-                            before_modification_value: JSON.stringify(albums[0]),
-                            modified_field: 'images'
-                        });
-
                         Album.updateOne(
                             { _id: id },
                             { 
                                 images: images,
                                 images_count: splittedImages.length,
 
-                                modified_date: modification.modified_date,
-                                modified_by_id: modification.modified_by_id,
-                                modified_by: JSON.stringify(generateCleanModel(loggedInUser))
+                                modified_date: generateDate(),
+                                modified_time: generateTime(),
+                                modified_by_id: loggedInUser.id,
+                                modified_by: loggedInUser
                             }
                         )
                             .then(_ => {
                                 Album.find({ _id: id })
                                     .then(newAlbum => {
-                                        Modification.insertMany(modification)
-                                            .then(newModification => {
-                                                res.status(statusCodes.success).json({
-                                                    message: 'Images have been updated.',
-                                                    album: generateAlbum(newAlbum[0]),
-                                                    modification: generateModification(newModification[0])
-                                                });
-                                            })
-                                            .catch(error => {
-                                                res.status(statusCodes.server_error).json({
-                                                    message: errorMessages.internal,
-                                                    error
-                                                });
-                                            })
+                                        res.status(statusCodes.success).json({
+                                            message: successMessages.album_images_updated_tr,
+                                            actual_message: successMessages.album_images_updated,
+                                            album: generateAlbum(newAlbum[0])
+                                        });
                                     })
                                     .catch(error => {
-                                        console.log(error);
                                         if(error.kind === ErrorKind.ID) {
                                             res.status(statusCodes.user_error).json({
-                                                message: errorMessages.invalid_id(id)
+                                                message: errorMessages.invalid_id_tr,
+                                                actual_message: errorMessages.invalid_id(id)
                                             });
                                         } else {
                                             res.status(statusCodes.server_error).json({
-                                                message: errorMessages.internal,
+                                                message: errorMessages.internal_tr,
+                                                actual_message: errorMessages.internal,
                                                 error
                                             });
                                         }
                                     })
                             })
                             .catch(error => {
-                                console.log(error);
                                 if(error.kind === ErrorKind.ID) {
                                     res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id(id)
+                                        message: errorMessages.invalid_id_tr,
+                                        actual_message: errorMessages.invalid_id(id)
                                     });
                                 } else {
                                     res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal,
+                                        message: errorMessages.internal_tr,
+                                        actual_message: errorMessages.internal,
                                         error
                                     });
                                 }
@@ -629,30 +628,33 @@ exports.images = (req, res) => {
                     }
                 })
                 .catch(error => {
-                    console.log(error);
                     if(error.kind === ErrorKind.ID) {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.invalid_id(id)
+                            message: errorMessages.invalid_id_tr,
+                            actual_message: errorMessages.invalid_id(id)
                         });
                     } else {
                         res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal,
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
                             error
                         });
                     }
                 })
         } else {
             res.status(statusCodes.user_error).json({
-                message: 'Please select images.'
+                message: errorMessages.select_images_tr,
+                actual_message: errorMessages.select_images
             });
         }
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
-// select/edit selected images
+
 exports.selectedImages = (req, res) => {
     const id = req.params.id;
 
@@ -660,8 +662,9 @@ exports.selectedImages = (req, res) => {
         Album.find({ _id: id, active: true })
             .then(albums => {
                 if(albums.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Album', id)
+                    res.status(statusCodes.user_error).then({
+                        message: errorMessages.album_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Album', id)
                     });
                 } else {
                     const selectedImages = req.body.selected_images;
@@ -679,18 +682,21 @@ exports.selectedImages = (req, res) => {
                             Album.find({ _id: id })
                                 .then(newAlbum => {
                                     res.status(statusCodes.success).json({
-                                        message: 'Images have been selected.',
+                                        message: successMessages.album_images_selected_tr,
+                                        actual_message: successMessages.album_images_selected,
                                         album: generateAlbum(newAlbum[0])
                                     });
                                 })
                                 .catch(error => {
                                     if(error.kind === ErrorKind.ID) {
                                         res.status(statusCodes.user_error).json({
-                                            message: errorMessages.invalid_id(id)
+                                            message: errorMessages.invalid_id_tr,
+                                            actual_message: errorMessages.invalid_id(id)
                                         });
                                     } else {
                                         res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal,
+                                            message: errorMessages.internal_tr,
+                                            actual_message: errorMessages.internal,
                                             error
                                         });
                                     }
@@ -699,42 +705,47 @@ exports.selectedImages = (req, res) => {
                         .catch(error => {
                             if(error.kind === ErrorKind.ID) {
                                 res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(id)
+                                    message: errorMessages.invalid_id_tr,
+                                    actual_message: errorMessages.invalid_id(id)
                                 });
                             } else {
                                 res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
                                     error
                                 });
                             }
                         })
                     } else {
                         res.status(statusCodes.user_error).json({
-                            message: 'Please select images.'
+                            message: errorMessages.select_images_tr,
+                            actual_message: errorMessages.select_images
                         });
                     }
                 }
             })
             .catch(error => {
-                console.log(error);
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 }
             })
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
-// assign/reasign to other user
+
 exports.assignUser = (req, res) => {
     const id = req.params.id;
     const newUser = req.body.user;
@@ -746,8 +757,9 @@ exports.assignUser = (req, res) => {
         Album.find({ _id: id, active: true })
             .then(albums => {
                 if(albums.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Album', id)
+                    res.status(statusCodes.user_error).then({
+                        message: errorMessages.album_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Album', id)
                     });
                 } else {
                     if(newUser) {
@@ -755,68 +767,55 @@ exports.assignUser = (req, res) => {
                             .then(clients => {
                                 if(clients.length === 0) {
                                     res.status(statusCodes.user_error).json({
-                                        message: errorMessages.not_exist('User', id)
+                                        message: errorMessages.client_not_exist_tr,
+                                        actual_message: errorMessages.not_exist('Client', id)
                                     });
                                 } else {
-                                    const modification = generateModificationForDb({
-                                        cluster: 'Album',
-                                        id,
-                                        modification: ModificationType.ASSIGNED_ALBUM,
-                                        modified_by: generateCleanModel(loggedInUser)
-                                    });
-
                                     Album.updateOne(
                                         { _id: id },
                                         { 
                                             assigned_to_id: clients[0]._id,
-                                            assigned_to: JSON.stringify(generateCleanModel(clients[0])),
+                                            assigned_to: generateCleanModel(clients[0]),
 
                                             modified_date: generateDate(),
+                                            modified_time: generateTime(),
                                             modified_by_id: loggedInUser.id,
-                                            modified_by: JSON.stringify(generateCleanModel(loggedInUser))
+                                            modified_by: loggedInUser
                                         }
                                     )
                                     .then(_ => {
                                         Album.find({ _id: id })
                                             .then(newAlbum => {
-                                                Modification.insertMany(modification)
-                                                    .then(newModification => {
-                                                        res.status(statusCodes.success).json({
-                                                            message: 'User has been assigned.',
-                                                            album: generateAlbum(newAlbum[0]),
-                                                            modification: generateModification(newModification[0])
-                                                        });
-                                                    })
-                                                    .catch(error => {
-                                                        res.status(statusCodes.server_error).json({
-                                                            message: errorMessages.internal,
-                                                            error
-                                                        });
-                                                    })
+                                                res.status(statusCodes.success).json({
+                                                    message: 'User has been assigned.',
+                                                    album: generateAlbum(newAlbum[0])
+                                                });
                                             })
                                             .catch(error => {
-                                                console.log(error);
                                                 if(error.kind === ErrorKind.ID) {
                                                     res.status(statusCodes.user_error).json({
-                                                        message: errorMessages.invalid_id(id)
+                                                        message: errorMessages.invalid_id_tr,
+                                                        actual_message: errorMessages.invalid_id(id)
                                                     });
                                                 } else {
                                                     res.status(statusCodes.server_error).json({
-                                                        message: errorMessages.internal,
+                                                        message: errorMessages.internal_tr,
+                                                        actual_message: errorMessages.internal,
                                                         error
                                                     });
                                                 }
                                             })
                                     })
                                     .catch(error => {
-                                        console.log(error);
                                         if(error.kind === ErrorKind.ID) {
                                             res.status(statusCodes.user_error).json({
-                                                message: errorMessages.invalid_id(id)
+                                                message: errorMessages.invalid_id_tr,
+                                                actual_message: errorMessages.invalid_id(id)
                                             });
                                         } else {
                                             res.status(statusCodes.server_error).json({
-                                                message: errorMessages.internal,
+                                                message: errorMessages.internal_tr,
+                                                actual_message: errorMessages.internal,
                                                 error
                                             });
                                         }
@@ -824,46 +823,49 @@ exports.assignUser = (req, res) => {
                                 }
                             })
                             .catch(error => {
-                                console.log(error);
                                 if(error.kind === ErrorKind.ID) {
                                     res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id(id)
+                                        message: errorMessages.invalid_id_tr,
+                                        actual_message: errorMessages.invalid_id(id)
                                     });
                                 } else {
                                     res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal,
+                                        message: errorMessages.internal_tr,
+                                        actual_message: errorMessages.internal,
                                         error
                                     });
                                 }
                             })
                     } else {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.required_field('New user')
+                            message: errorMessages.required_field_tr.new_user,
+                            actual_message: errorMessages.required_field('New user')
                         });
                     }
                 }
             })
             .catch(error => {
-                console.log(error);
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 }
             })
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
 
-// deleted
 exports.delete = (req, res) => {
     const id = req.params.id;
 
@@ -871,24 +873,28 @@ exports.delete = (req, res) => {
         Album.find({ _id: id })
             .then(albums => {
                 if(albums.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.not_exist('Album', id)
+                    res.status(statusCodes.user_error).then({
+                        message: errorMessages.album_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Album', id)
                     });
                 } else {
                     Album.deleteOne({ _id: id })
                         .then(_ => {
                             res.status(statusCodes.success).json({
-                                message: `Album ${ generateAlbum(albums[0]).title } has been deleted permanently.`
-                            })
+                                message: successMessages.album_deleted_tr,
+                                actual_message: successMessages.album_deleted(generateAlbum(albums[0]))
+                            });
                         })
                         .catch(error => {
                             if(error.kind === ErrorKind.ID) {
                                 res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id(id)
+                                    message: errorMessages.invalid_id_tr,
+                                    actual_message: errorMessages.invalid_id(id)
                                 });
                             } else {
                                 res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
                                     error
                                 });
                             }
@@ -898,18 +904,21 @@ exports.delete = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 }
             })
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }

@@ -33,6 +33,10 @@ exports.errorMessages = {
   client_already_active: 'Client is already active.',
   client_already_active_tr: 'errors.clientAlreadyActive',
 
+  album_not_exist_tr: 'errors.albumNotExist',
+  select_images: 'Please selected images.',
+  select_images_tr: 'errors.selectImages',
+
   required_field: (field) => `[Field: ${ field }] is mandatory.`,
   required_field_tr: {
     firstname: 'errors.required.firstname',
@@ -41,5 +45,8 @@ exports.errorMessages = {
     phone_number: 'errors.required.phoneNumber',
     email: 'errors.required.email',
     password: 'errors.required.password',
+    title: 'errors.required.title',
+    date: 'errors.required.date',
+    new_user: 'errors.required.newUser'
   }
 };

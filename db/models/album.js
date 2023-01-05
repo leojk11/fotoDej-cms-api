@@ -32,13 +32,13 @@ const albumSchema = new Schema({
         type: String
     },
     assigned_to: {
-        type: String
+        type: Object
     },
     assigned_by_id: {
         type: String
     },
     assigned_by: {
-        type: String
+        type: Object
     },
 
     created_date: {
@@ -57,11 +57,14 @@ const albumSchema = new Schema({
     modified_date: {
         type: String
     },
+    modified_time: {
+        type: String
+    },
     modified_by_id: {
         type: String
     },
     modified_by: {
-        type: String
+        type: Object
     },
 
     active: {
