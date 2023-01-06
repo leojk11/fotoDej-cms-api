@@ -11,6 +11,7 @@ const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
 
 const { parseJwt } = require('../middlewares/common');
+const { successMessages } = require('../helpers/successMessages');
 
 exports.getAll = (req, res) => {
 
@@ -50,15 +51,17 @@ exports.getAll = (req, res) => {
                 })
                 .catch(error => {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 })
         })
         .catch(error => {
             res.status(statusCodes.server_error).json({
-                message: errorMessages.internal,
-                error: {}
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
             });
         })
 }
@@ -80,19 +83,21 @@ exports.getSingle = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id),
-                        error
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 }
             })
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
@@ -103,7 +108,8 @@ exports.addNew = (req, res) => {
 
     if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.no_permission,
+            message: errorMessages.no_permission_tr,
+            actual_message: errorMessages.no_permission,
             rolesAllowed: AdminRole.SUPER_ADMIN
         });
     } else {
@@ -121,30 +127,36 @@ exports.addNew = (req, res) => {
 
         if (!data.firstname || data.firstname === '') {
             res.status(statusCodes.user_error).json({
-                message: errorMessages.required_field('Firstname')
+                message: errorMessages.required_field_tr.firstname,
+                actual_message: errorMessages.required_field('Firstname')
             });
         } else if (!data.lastname || data.lastname === '') {
             res.status(statusCodes.user_error).json({
-                message: errorMessages.required_field('Lastname')
+                message: errorMessages.required_field_tr.lastname,
+                actual_message: errorMessages.required_field('Lastname')
             });
         } else if (!data.email || data.email === '') {
             res.status(statusCodes.user_error).json({
-                message: errorMessages.required_field('Email')
+                message: errorMessages.required_field_tr.email,
+                actual_message: errorMessages.required_field('Email')
             });
         } else if (!data.phone_number || data.phone_number === '') {
             res.status(statusCodes.user_error).json({
-                message: errorMessages.required_field('Phone number')
+                message: errorMessages.required_field_tr.phone_number,
+                actual_message: errorMessages.required_field('Phone number')
             });
         } else if (!data.password || data.password === '') {
             res.status(statusCodes.user_error).json({
-                message: errorMessages.required_field('Password')
+                message: errorMessages.required_field_tr.password,
+                actual_message: errorMessages.required_field('Password')
             });
         } else {
             Admin.find({ email: data.email })
                 .then(admins => {
                     if (admins.length > 0) {
                         res.status(statusCodes.user_error).json({
-                            message: `Admin with email ${ data.email } already exists.`
+                            message: errorMessages.admin_exist_email_tr,
+                            actual_message: `Admin with email ${ data.email } already exists.`
                         });
                     } else {
                         data.password = bcrypt.hashSync(data.password, 10);
@@ -152,12 +164,14 @@ exports.addNew = (req, res) => {
                         Admin.insertMany({ ...data })
                             .then(_ => {
                                 res.status(statusCodes.success).json({
-                                    message: 'Admin has been added'
+                                    message: successMessages.admin_created_tr,
+                                    actual_message: successMessages.admin_crated
                                 });
                             })
                             .catch(error => {
                                 res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
                                     error
                                 });
                             });
@@ -165,7 +179,8 @@ exports.addNew = (req, res) => {
                 })
                 .catch(error => {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 })
@@ -179,7 +194,8 @@ exports.edit = (req, res) => {
 
     if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.no_permission,
+            message: errorMessages.no_permission_tr,
+            actual_message: errorMessages.no_permission,
             rolesAllowed: AdminRole.SUPER_ADMIN
         });
     } else {
@@ -200,7 +216,8 @@ exports.edit = (req, res) => {
                 .then(admins => {
                     if (admins.length === 0) {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.not_exist('Admin', _id)
+                            message: errorMessages.admin_not_exist_tr,
+                            actual_message: errorMessages.not_exist('Admin', _id)
                         });
                     } else {
                         Admin.updateOne({ _id }, data)
@@ -214,15 +231,16 @@ exports.edit = (req, res) => {
                                     })
                                     .catch(error => {
                                         res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal,
+                                            message: errorMessages.internal_tr,
+                                            actual_message: errorMessages.internal,
                                             error
                                         });
                                     })
                             })
                             .catch(error => {
-                                console.log(error);
                                 res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
                                     error
                                 });
                             })
@@ -231,20 +249,21 @@ exports.edit = (req, res) => {
                 .catch(error => {
                     if(error.kind === ErrorKind.ID) {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.invalid_id(id),
-                            error
+                            message: errorMessages.invalid_id_tr,
+                            actual_message: errorMessages.invalid_id(id)
                         });
                     } else {
-                        console.log(error);
                         res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal,
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
                             error
                         });
                     }
                 })
         } else {
             res.status(statusCodes.user_error).json({
-                message: errorMessages.id_missing
+                message: errorMessages.id_missing_tr,
+                actual_message: errorMessages.id_missing
             });
         }
     }
@@ -256,7 +275,8 @@ exports.delete = (req, res) => {
 
     if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.no_permission,
+            message: errorMessages.no_permission_tr,
+            actual_message: errorMessages.no_permission,
             rolesAllowed: AdminRole.SUPER_ADMIN
         });
     } else {
@@ -267,18 +287,21 @@ exports.delete = (req, res) => {
                 .then(admins => {
                     if (admins.length === 0) {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.not_exist('Admin', id)
+                            message: errorMessages.admin_not_exist_tr,
+                            actual_message: errorMessages.not_exist('Admin', id)
                         });
                     } else {
                         Admin.deleteOne({ _id })
                             .then(() => {
                                 res.status(statusCodes).json({
-                                    message: 'Admin has been deleted.'
-                                })
+                                    message: successMessages.admin_deleted_tr,
+                                    actual_message: successMessages.admin_deleted
+                                });
                             })
                             .catch(error => {
                                 res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal,
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
                                     error
                                 });
                             })
@@ -287,12 +310,13 @@ exports.delete = (req, res) => {
                 .catch(error => {
                     if(error.kind === ErrorKind.ID) {
                         res.status(statusCodes.user_error).json({
-                            message: errorMessages.invalid_id(id),
-                            error
+                            message: errorMessages.invalid_id_tr,
+                            actual_message: errorMessages.invalid_id(id)
                         });
                     } else {
                         res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal,
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
                             error
                         });
                     }
@@ -300,7 +324,8 @@ exports.delete = (req, res) => {
 
         } else {
             res.status(statusCodes.user_error).json({
-                message: errorMessages.id_missing
+                message: errorMessages.id_missing_tr,
+                actual_message: errorMessages.id_missing
             });
         }
     }

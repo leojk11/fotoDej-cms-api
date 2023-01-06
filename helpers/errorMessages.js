@@ -37,6 +37,9 @@ exports.errorMessages = {
   select_images: 'Please selected images.',
   select_images_tr: 'errors.selectImages',
 
+  admin_exist_email_tr: 'errors.adminExistEmail',
+  admin_not_exist_tr: 'errors.adminNotExist',
+
   required_field: (field) => `[Field: ${ field }] is mandatory.`,
   required_field_tr: {
     firstname: 'errors.required.firstname',
