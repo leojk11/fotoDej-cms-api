@@ -41,5 +41,12 @@ exports.successMessages = {
   image_deleted_tr: 'success.imageDeleted',
 
   upload_success: 'Upload has been successfull.',
-  upload_success_tr: 'success.uploadSuccess'
+  upload_success_tr: 'success.uploadSuccess',
+
+  schedule_created: 'New schedule has been crated.',
+  schedule_created_tr: 'success.scheduleCreated',
+  schedule_updated: 'Schedule has been updated.',
+  schedule_updated_tr: 'success.scheduleUpdated',
+  schedule_deleted: 'Schedule has been deleted.',
+  schedule_deleted_tr: 'success.scheduleDeleted'
 };

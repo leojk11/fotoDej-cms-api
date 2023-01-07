@@ -1,7 +1,9 @@
 const Schedule = require('../db/models/schedule');
 
 const { errorMessages } = require('../helpers/errorMessages');
+const { successMessages } = require('../helpers/successMessages');
 const { statusCodes } = require('../helpers/statusCodes');
+const { ErrorKind } = require('../enums/errorKind');
 
 const { generateSchedule } = require('../helpers/generateModels');
 const { parseJwt } = require('../middlewares/common');
@@ -9,7 +11,8 @@ const { parseJwt } = require('../middlewares/common');
 exports.getAll = (req, res) => {
     if(!req.query.from || !req.query.to) {
         res.status(statusCodes.user_error).json({
-            message: 'Date from and to need to be provided.'
+            message: errorMessages.dates_need_provided_tr,
+            actual_message: errorMessages.dates_need_provided
         });
     } else {
         Schedule.find({
@@ -42,9 +45,11 @@ exports.getAll = (req, res) => {
 
                 res.status(statusCodes.success).send(groupArrays);
             })
-            .catch(() => {
+            .catch(error => {
                 res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
                 });
             })
     }
@@ -61,18 +66,21 @@ exports.getSingle = (req, res) => {
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 }
             })
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
@@ -82,9 +90,10 @@ exports.getForUser = (req, res) => {
     const loggedInUser = parseJwt(token);
 
     if(!req.query.from || !req.query.to) {
-        res.status(400).json({
-            message: 'Date from and to need to be provided.'
-        })
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.dates_need_provided_tr,
+            actual_message: errorMessages.dates_need_provided
+        });
     } else {
         Schedule.find({
             date: {
@@ -105,7 +114,9 @@ exports.getForUser = (req, res) => {
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
                 });
             })
     }
@@ -123,23 +134,28 @@ exports.addNew = (req, res) => {
 
     if (!data.title || data.title === '') {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Title')
+            message: errorMessages.required_field_tr.title,
+            actual_message: errorMessages.required_field('Title')
         });
     } else if (!data.date || data.date === '') {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.required_field('Date')
+            message: errorMessages.required_field_tr.date,
+            actual_message: errorMessages.required_field('Date')
         });
     } else {
         Schedule.insertMany(data)
             .then(addNewRes => {
                 res.status(statusCodes.success).json({
-                    message: 'Schedule has been added.',
+                    message: successMessages.schedule_created_tr,
+                    actual_message: successMessages.schedule_created,
                     schedule: generateSchedule(addNewRes[0])
                 });
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
-                message: errorMessages.internal
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
                 });
             })
     }
@@ -161,31 +177,37 @@ exports.edit = (req, res) => {
                 Schedule.find({ _id: id })
                     .then(schedules => {
                         res.status(statusCodes.success).json({
-                            message: 'Schedule has been updated.',
+                            message: successMessages.schedule_updated_tr,
+                            actual_message: successMessages.schedule_updated,
                             schedule: generateSchedule(schedules[0])
                         });
                     })
                     .catch(error => {
                         res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
+                            error
                         });
                     })
             })
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 }
             })
     } else {
         res.status(statusCodes.user_error).json({
-            messsage: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_messsage: errorMessages.id_missing
         });
     }
 }
@@ -197,24 +219,28 @@ exports.delete = (req, res) => {
         Schedule.deleteOne({ _id: id })
             .then(() => {
                 res.status(statusCodes.success).json({
-                    message: `Schedule has been deleted.`
-                })
+                    message: successMessages.schedule_deleted_tr,
+                    actual_message: successMessages.schedule_deleted
+                });
             })
             .catch(error => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id(id)
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal,
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
                         error
                     });
                 }
             })
     } else {
         res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_messsage: errorMessages.id_missing
         });
     }
 }
