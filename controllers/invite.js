@@ -44,14 +44,16 @@ exports.getAll = (req, res) => {
         })
         .catch(error => {
           res.status(statusCodes.server_error).json({
-            message: errorMessages.internal,
+            message: errorMessages.internal_tr,
+            actual_message: errorMessages.internal,
             error
           });
         })
     })
     .catch(error => {
       res.status(statusCodes.server_error).json({
-        message: errorMessages.internal,
+        message: errorMessages.internal_tr,
+        actual_message: errorMessages.internal,
         error
       });
     })
@@ -65,7 +67,8 @@ exports.getSingle = (req, res) => {
       .then(invites => {
         if(invites.length === 0) {
           res.status(statusCodes.user_error).json({
-            message: errorMessages.not_exist('Invite', _id)
+            message: errorMessages.invite_not_exist_tr,
+            actual_message: errorMessages.not_exist('Invite', _id)
           });
         } else {
           res.status(statusCodes.success).send(generateInvite(invites[0]));
@@ -74,17 +77,21 @@ exports.getSingle = (req, res) => {
       .catch(error => {
         if(error.kind === ErrorKind.ID) {
           res.status(statusCodes.user_error).json({
-            message: errorMessages.invalid_id(_id)
+            message: errorMessages.invalid_id_tr,
+            actual_message: errorMessages.invalid_id(id)
           });
         } else {
           res.status(statusCodes.server_error).json({
-            message: errorMessages.internal
+            message: errorMessages.internal_tr,
+            actual_message: errorMessages.internal,
+            error
           });
         }
       })
   } else {
     res.status(statusCodes.user_error).json({
-      message: errorMessages.id_missing
+      message: errorMessages.id_missing_tr,
+      actual_message: errorMessages.id_missing
     });
   }
 }

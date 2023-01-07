@@ -55,6 +55,8 @@ exports.errorMessages = {
   upload_error: 'Error while uploading',
   upload_error_tr: 'errors.uploadError',
 
+  invite_not_exist_tr: 'errors.inviteNotExist',
+
   required_field: (field) => `[Field: ${ field }] is mandatory.`,
   required_field_tr: {
     firstname: 'errors.required.firstname',
