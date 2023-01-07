@@ -1,5 +1,5 @@
 exports.errorMessages = {
-  please_enter: (field) => `Plase enter your ${ field }.`,
+  please_enter: (field) => `Plase enter ${ field }.`,
   enter_password_tr: 'errors.enterPassword',
   enter_email_tr: 'errors.enterEmail',
   enter_image_name_tr: 'errors.enterImageName',
