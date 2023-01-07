@@ -2,6 +2,7 @@ exports.errorMessages = {
   please_enter: (field) => `Plase enter your ${ field }.`,
   enter_password_tr: 'errors.enterPassword',
   enter_email_tr: 'errors.enterEmail',
+  enter_image_name_tr: 'errors.enterImageName',
 
   user_not_exist: (email) => `User with email ${ email } does not exist.`,
   user_not_exist_tr: 'errors.userNotExist',
@@ -48,6 +49,11 @@ exports.errorMessages = {
   image_not_exist_tr: 'errors.imageNotExist',
   must_select_image: 'You must select an image.',
   must_select_image_tr: 'errors.mustSelectImage',
+
+  provide_image_name: 'You need to provide image name.',
+  provide_image_name_tr: 'errors.provideImageName',
+  upload_error: 'Error while uploading',
+  upload_error_tr: 'errors.uploadError',
 
   required_field: (field) => `[Field: ${ field }] is mandatory.`,
   required_field_tr: {

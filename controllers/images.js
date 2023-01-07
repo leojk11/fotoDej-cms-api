@@ -4,6 +4,7 @@ const Image = require('../db/models/image');
 
 const { errorMessages } = require('../helpers/errorMessages');
 const { statusCodes } = require('../helpers/statusCodes');
+const { successMessages } = require('../helpers/successMessages');
 
 const { generateImage } = require('../helpers/generateModels');
 
@@ -14,13 +15,15 @@ exports.getImage = (req, res) => {
             .sendFile('./images/' + image, { root: '.' }, (error) => {
                 if(error) {
                     res.status(statusCodes.user_error).json({
-                        message: `Image ${ image } has not been found.`
-                    })
+                        message: errorMessages.image_not_exist_tr,
+                        actual_message: errorMessages.image_not_exist
+                    });
                 }
             });
     } else {
         res.status(statusCodes.user_error).json({
-            message: 'Please provide image name.'
+            message: errorMessages.provide_image_name_tr,
+            actual_message: errorMessages.provide_image_name
         });
     }
 }
@@ -40,14 +43,17 @@ exports.getImagesForAlbum = (req, res) => {
                     imagesCount: images.length
                 });
             })
-            .catch(() => {
+            .catch(error => {
                 res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
                 });
             })
     } else {
         res.status(statusCodes.user_error).json({
-           message: errorMessages.id_missing
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
         });
     }
 }
@@ -55,7 +61,8 @@ exports.getImagesForAlbum = (req, res) => {
 exports.uploadImagesV2 = (req, res) => {
   if (!req.files) {
     res.status(statusCodes.user_error).json({
-      message: 'Please select at least 1 image!'
+        message: errorMessages.must_select_image_tr,
+        actual_message: errorMessages.must_select_image
     });
   } else {
     const file = req.files.images;
@@ -70,23 +77,25 @@ exports.uploadImagesV2 = (req, res) => {
             try {
                 file.mv('./images/' + file.name).then();
             }
-            catch (e) {
-                console.log(e);
+            catch (error) {
                 return res.send({
                     success: false,
-                    message: 'upload error',
-                    error: e
+                    message: errorMessages.upload_error_tr,
+                    actual_message: errorMessages.upload_error,
+                    error
                 });
             }
 
             res.status(statusCodes.success).json({ 
-                success: true,
-                message: 'uploaded successfully' 
+                message: successMessages.upload_success_tr,
+                actual_message: successMessages.upload_success
             });
         })
-        .catch(() => {
+        .catch(error => {
             res.status(statusCodes.server_error).json({
-                message: errorMessages.internal
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
             });
         })
   }
@@ -100,34 +109,40 @@ exports.delete = (req, res) => {
 
   if (albumId) {
       if (image) {
-          try {
-              Image.deleteOne({ name: image, album_id: albumId })
+        try {
+            Image.deleteOne({ name: image, album_id: albumId })
                 .then(() => {
                     fs.unlinkSync(path + image);
 
                     res.status(statusCodes.success).json({
-                        message: `${ image } has been deleted.`
+                        message: successMessages.image_deleted_tr,
+                        actual_message: successMessages.image_deleted
                     });
                 })
-                .catch(() => {
+                .catch(error => {
                     res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error
                     });
                 })
-          } catch (error) {
-              res.status(statusCodes.internal).json({
-                  message: errorMessages.internal,
-                  error
-              });
-          }
-      } else {
-          res.status(statusCodes.user_error).json({
-             message: errorMessages.please_enter('Image name')
-          });
-      }
+        } catch (error) {
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
+            });
+        }
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.enter_image_name_tr,
+            actual_message: errorMessages.please_enter('image name')
+        });
+    }
   } else {
-      res.status(statusCodes.user_error).json({
-          message: errorMessages.id_missing
-      });
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
+        });
   }
 }

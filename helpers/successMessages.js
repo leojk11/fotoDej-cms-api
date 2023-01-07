@@ -38,5 +38,8 @@ exports.successMessages = {
   promo_images_updated: 'Promo images have been updated.',
   promo_images_updated_tr: 'success.promoImagesUpdated',
   image_deleted: 'Image has been deleted.',
-  image_deleted_tr: 'success.imageDeleted'
+  image_deleted_tr: 'success.imageDeleted',
+
+  upload_success: 'Upload has been successfull.',
+  upload_success_tr: 'success.uploadSuccess'
 };
