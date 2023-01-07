@@ -40,6 +40,15 @@ exports.errorMessages = {
   admin_exist_email_tr: 'errors.adminExistEmail',
   admin_not_exist_tr: 'errors.adminNotExist',
 
+  configuration_not_present: 'Configuration is not present yet.',
+  configuration_not_present_tr: 'errors.configurationNotPresent',
+  max_images: 'You cannot select more then 6 images.',
+  max_images_tr: 'errors.maxImages',
+  image_not_exist: 'Image does not not exist.',
+  image_not_exist_tr: 'errors.imageNotExist',
+  must_select_image: 'You must select an image.',
+  must_select_image_tr: 'errors.mustSelectImage',
+
   required_field: (field) => `[Field: ${ field }] is mandatory.`,
   required_field_tr: {
     firstname: 'errors.required.firstname',
@@ -50,6 +59,12 @@ exports.errorMessages = {
     password: 'errors.required.password',
     title: 'errors.required.title',
     date: 'errors.required.date',
-    new_user: 'errors.required.newUser'
+    new_user: 'errors.required.newUser',
+    logo: 'errors.required.logo',
+    main_image: 'errors.required.mainImage',
+    main_title: 'errors.required.mainTitle',
+    second_title: 'errors.required.secondTitle',
+    contact_form_label: 'errors.required.contactFormLabel',
+    address: 'errors.required.address'
   }
 };

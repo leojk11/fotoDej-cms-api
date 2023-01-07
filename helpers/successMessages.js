@@ -29,5 +29,14 @@ exports.successMessages = {
   admin_crated: 'Admin has been created.',
   admin_created_tr:  'success.adminCreated',
   admin_deleted: 'Admin has been deleted.',
-  admin_deleted_tr: 'success.adminDeleted'
+  admin_deleted_tr: 'success.adminDeleted',
+
+  configuration_created: 'New configuration has been added.',
+  configuration_created_tr: 'success.configurationCreated',
+  configuration_updated: 'Configuration has been updated.',
+  configuration_updated_tr: 'success.configurationUpdated',
+  promo_images_updated: 'Promo images have been updated.',
+  promo_images_updated_tr: 'success.promoImagesUpdated',
+  image_deleted: 'Image has been deleted.',
+  image_deleted_tr: 'success.imageDeleted'
 };
