@@ -86,22 +86,20 @@ exports.generateClient = (client) => {
 
     created_date: client.created_date,
     created_time: client.created_time,
-    created_by: JSON.parse(client.created_by),
+    created_by: client.created_by,
+    created_by_id: client.created_by_id,
 
     modified_date: client.modified_date,
-    // modified_time: client.modified_time,
+    modified_time: client.modified_time,
+    modified_by: client.modified_by,
     modified_by_id: client.modified_by_id,
+
+    deleted_by: client.deleted_by,
 
     account_status: client.account_status,
     active: client.active
   };
-  if(client.modified_by) {
-    newClient['modified_by'] = JSON.parse(client.modified_by);
-  }
-  if(client.deleted_by) {
-    newClient['deleted_by'] = JSON.parse(client.deleted_by);
-  }
-
+  
   return newClient;
 }
 

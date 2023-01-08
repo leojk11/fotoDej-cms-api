@@ -81,7 +81,7 @@ const clientSchema = new Schema({
     type: String
   },
   deleted_by: {
-    type: String
+    type: Object
   }
 });
 

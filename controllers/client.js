@@ -23,6 +23,8 @@ exports.getAll = (req, res) => {
 	const token = req.headers.authorization;
 	const loggedInUser = parseJwt(token);
 
+  console.log(loggedInUser);
+
 	let skip = 0;
 	if(parseInt(req.query.page) === 1) {
 		skip = 0;
@@ -191,6 +193,8 @@ exports.addNew = (req, res) => {
   const token = req.headers.authorization;
   const loggedInUser = parseJwt(token);
 
+  console.log(loggedInUser);
+
 	const data = { 
 		...req.body,
 		number_of_albums: 0,
@@ -257,6 +261,7 @@ exports.addNew = (req, res) => {
                   });
                 })
                 .catch(error => {
+                  console.log(error);
                   res.status(statusCodes.server_error).json({
                     message: errorMessages.internal_tr,
                     actual_message: errorMessages.internal,
@@ -265,6 +270,7 @@ exports.addNew = (req, res) => {
                 })
             })
             .catch(error => {
+              console.log(error);
               res.status(statusCodes.server_error).json({
                 message: errorMessages.internal_tr,
                 actual_message: errorMessages.internal,
@@ -274,6 +280,7 @@ exports.addNew = (req, res) => {
         }
       })
       .catch(error => {
+        console.log(error);
         res.status(statusCodes.server_error).json({
           message: errorMessages.internal_tr,
           actual_message: errorMessages.internal,
@@ -776,7 +783,7 @@ exports.delete = (req, res) => {
             Client.deleteOne({ _id: id })
               .then(_ => {
                 res.status(statusCodes.success).json({
-                  message: errorMessages.client_deleted_permanently_tr,
+                  message: successMessages.client_deleted_permanently_tr,
                   actual_message: successMessages.document_deleted(id),
                 });
               })

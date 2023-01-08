@@ -8,8 +8,9 @@ exports.errorMessages = {
   user_not_exist_tr: 'errors.userNotExist',
 
   not_authorized: 'You are not authorized. Plase login!',
+  not_authorized_tr: 'errors.notAuthorized',
   passwords_not_match: 'errors.passwordsNotMatch',
-  password_not_correct: 'Password is not correct.',
+  password_not_correct: 'Entered password is not correct.',
   password_not_correct_tr: 'errors.passwordNotCorrect',
 
   internal: 'Internal server error!',
@@ -21,7 +22,7 @@ exports.errorMessages = {
   email_send_error: 'Error while sending email.',
   email_send_error_tr: 'errors.emailSend',
 
-  id_missing: 'Please provide ID!',
+  id_missing: 'You need to provide ID.',
   id_missing_tr: 'errors.missingId',
   not_exist: (cluster, id) => `[ID: ${ id }] does not exist in ${ cluster }.`,
   invalid_id: (id) => `[ID: ${ id }] is not valid.`,
