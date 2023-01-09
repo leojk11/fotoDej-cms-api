@@ -1,5 +1,6 @@
 const Album = require('../db/models/album');
 const Client = require('../db/models/client');
+const Image = require('../db/models/image');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
@@ -570,7 +571,7 @@ exports.images = (req, res) => {
             Album.find({ _id: id, active: true })
                 .then(albums => {
                     if(albums.length === 0) {
-                        res.status(statusCodes.user_error).then({
+                        res.status(statusCodes.user_error).json({
                             message: errorMessages.album_not_exist_tr,
                             actual_message: errorMessages.not_exist('Album', id)
                         });
@@ -662,7 +663,7 @@ exports.selectedImages = (req, res) => {
         Album.find({ _id: id, active: true })
             .then(albums => {
                 if(albums.length === 0) {
-                    res.status(statusCodes.user_error).then({
+                    res.status(statusCodes.user_error).json({
                         message: errorMessages.album_not_exist_tr,
                         actual_message: errorMessages.not_exist('Album', id)
                     });
@@ -757,7 +758,7 @@ exports.assignUser = (req, res) => {
         Album.find({ _id: id, active: true })
             .then(albums => {
                 if(albums.length === 0) {
-                    res.status(statusCodes.user_error).then({
+                    res.status(statusCodes.user_error).json({
                         message: errorMessages.album_not_exist_tr,
                         actual_message: errorMessages.not_exist('Album', id)
                     });
@@ -873,19 +874,38 @@ exports.delete = (req, res) => {
         Album.find({ _id: id })
             .then(albums => {
                 if(albums.length === 0) {
-                    res.status(statusCodes.user_error).then({
+                    res.status(statusCodes.user_error).json({
                         message: errorMessages.album_not_exist_tr,
                         actual_message: errorMessages.not_exist('Album', id)
                     });
                 } else {
                     Album.deleteOne({ _id: id })
                         .then(_ => {
-                            res.status(statusCodes.success).json({
-                                message: successMessages.album_deleted_tr,
-                                actual_message: successMessages.album_deleted(generateAlbum(albums[0]))
-                            });
+                            Image.deleteMany({ album_id: id })
+                                .then(() => {
+                                    res.status(statusCodes.success).json({
+                                        message: successMessages.album_deleted_tr,
+                                        actual_message: successMessages.album_deleted(generateAlbum(albums[0]))
+                                    });
+                                })
+                                .catch(error => {
+                                    if(error.kind === ErrorKind.ID) {
+                                        res.status(statusCodes.user_error).json({
+                                            message: errorMessages.invalid_id_tr,
+                                            actual_message: errorMessages.invalid_id(id)
+                                        });
+                                    } else {
+                                        console.log(error);
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal_tr,
+                                            actual_message: errorMessages.internal,
+                                            error
+                                        });
+                                    }
+                                })
                         })
                         .catch(error => {
+                            console.log(error);
                             if(error.kind === ErrorKind.ID) {
                                 res.status(statusCodes.user_error).json({
                                     message: errorMessages.invalid_id_tr,
@@ -902,6 +922,7 @@ exports.delete = (req, res) => {
                 }
             })
             .catch(error => {
+                console.log(error)
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
                         message: errorMessages.invalid_id_tr,
