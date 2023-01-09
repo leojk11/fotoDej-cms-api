@@ -23,6 +23,7 @@ const scheduleRoutes = require('../routes/schedule');
 const configuration = require('../routes/feConfiguration');
 const inviteRoutes = require('../routes/invite');
 const organizationRoutes = require('../routes/organization');
+const requestsRoutes = require('../routes/requests');
 
 mainRouter.use('/users', userRoutes);
 mainRouter.use('/admin', adminRoutes);
@@ -33,5 +34,6 @@ mainRouter.use('/schedules', scheduleRoutes);
 mainRouter.use('/conf', configuration);
 mainRouter.use('/invites', inviteRoutes);
 mainRouter.use('/organizations', organizationRoutes);
+mainRouter.use('/requests', requestsRoutes);
 
 module.exports = mainRouter;

@@ -32,7 +32,7 @@ exports.getAll = (req, res) => {
             const requestsToSend = [];
 
             for(const request of requests) {
-              albumsToSend.push(generateAlbum(request));
+              requestsToSend.push(generateRequest(request));
             }
 
             res.status(statusCodes.success).json({
@@ -42,6 +42,7 @@ exports.getAll = (req, res) => {
             });
         })
         .catch(error => {
+          console.log(error);
           res.status(statusCodes.server_error).json({
             message: errorMessages.internal_tr,
             actual_message: errorMessages.internal,
@@ -50,6 +51,7 @@ exports.getAll = (req, res) => {
         })
     })
     .catch(error => {
+      console.log(error);
       res.status(statusCodes.server_error).json({
         message: errorMessages.internal_tr,
         actual_message: errorMessages.internal,
@@ -62,7 +64,7 @@ exports.getSingle = (req, res) => {
   const _id = req.params.id;
 
   if (_id) {
-    Request.find(_id)
+    Request.find({ _id })
       .then(requests => {
         if (requests.length === 0) {
           res.status(statusCodes.user_error).json({
@@ -74,6 +76,7 @@ exports.getSingle = (req, res) => {
         }
       })
       .catch(error => {
+        console.log(error);
         if(error.kind === ErrorKind.ID) {
           res.status(statusCodes.user_error).json({
             message: errorMessages.invalid_id_tr,
