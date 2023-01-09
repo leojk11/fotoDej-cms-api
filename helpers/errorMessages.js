@@ -61,6 +61,8 @@ exports.errorMessages = {
   dates_need_provided: 'Dates from ad to need to be provided.',
   dates_need_provided_tr: 'errors.datesNeedToBeProvided',
 
+  request_not_exist_tr: 'errors.requestNotExist',
+
   required_field: (field) => `[Field: ${ field }] is mandatory.`,
   required_field_tr: {
     firstname: 'errors.required.firstname',

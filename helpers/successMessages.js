@@ -48,5 +48,8 @@ exports.successMessages = {
   schedule_updated: 'Schedule has been updated.',
   schedule_updated_tr: 'success.scheduleUpdated',
   schedule_deleted: 'Schedule has been deleted.',
-  schedule_deleted_tr: 'success.scheduleDeleted'
+  schedule_deleted_tr: 'success.scheduleDeleted',
+
+  request_created: 'New request has been created.',
+  request_created_tr: 'success.requestCreated'
 };

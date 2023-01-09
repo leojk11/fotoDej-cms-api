@@ -443,7 +443,7 @@ exports.edit = (req, res) => {
                                         actual_message: errorMessages.not_exist('Client', req.body.assigned_to_id)
                                     });
                                 } else {
-                                    data['assigned_to'] = JSON.stringify(generateCleanModel(clients[0]))
+                                    data['assigned_to'] = generateCleanModel(clients[0]);
 
                                     Album.updateOne(
                                         { _id: id },
@@ -459,6 +459,7 @@ exports.edit = (req, res) => {
                                                 });
                                             })
                                             .catch(error => {
+                                                console.log(error);
                                                 if(error.kind === ErrorKind.ID) {
                                                     res.status(statusCodes.user_error).json({
                                                         message: errorMessages.invalid_id_tr,
@@ -474,6 +475,7 @@ exports.edit = (req, res) => {
                                             })
                                     })
                                     .catch(error => {
+                                        console.log(error);
                                         if(error.kind === ErrorKind.ID) {
                                             res.status(statusCodes.user_error).json({
                                                 message: errorMessages.invalid_id_tr,
@@ -504,6 +506,7 @@ exports.edit = (req, res) => {
                                     });
                                 })
                                 .catch(error => {
+                                    console.log(error);
                                     if(error.kind === ErrorKind.ID) {
                                         res.status(statusCodes.user_error).json({
                                             message: errorMessages.invalid_id_tr,
@@ -519,6 +522,7 @@ exports.edit = (req, res) => {
                                 })
                         })
                         .catch(error => {
+                            console.log(error);
                             if(error.kind === ErrorKind.ID) {
                                 res.status(statusCodes.user_error).json({
                                     message: errorMessages.invalid_id_tr,
@@ -536,6 +540,7 @@ exports.edit = (req, res) => {
                 }
             })
             .catch(error => {
+                console.log(error);
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
                         message: errorMessages.invalid_id_tr,
