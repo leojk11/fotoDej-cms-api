@@ -16,7 +16,7 @@ exports.getAll = (req, res) => {
   if(parseInt(req.query.page) === 1) {
     skip = 0;
   } else {
-    skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
+    skip = req.query.take;
   }
 
   const filters = { };
