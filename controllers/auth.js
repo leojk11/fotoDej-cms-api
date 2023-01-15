@@ -90,7 +90,11 @@ exports.clientLogin = (req, res) => {
                         if (users[0].first_password) {
                             if (data.password === users[0].first_password) {
                                 res.status(statusCodes.success).json({
-                                    command: loginCommands.RESET_REQUIRED
+                                    command: loginCommands.RESET_REQUIRED,
+                                    user_info: {
+                                        id: users[0]._id,
+                                        first_password: users[0].first_password
+                                    }
                                 });
                             } else {
                                 res.status(statusCodes.user_error).json({

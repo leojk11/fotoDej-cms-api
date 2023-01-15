@@ -554,7 +554,7 @@ exports.resetFirstPassword = (req, res) => {
 
               Client.updateOne(
                 { _id },
-                { password: newPassword }
+                { password: newPassword, first_password: null }
               )
               .then(_ => {
                 const token = jwt.sign(
@@ -574,7 +574,7 @@ exports.resetFirstPassword = (req, res) => {
                 if(error.kind === ErrorKind.ID) {
                   res.status(statusCodes.user_error).json({
                     message: errorMessages.invalid_id_tr,
-                    actual_message: errorMessages.invalid_id(id)
+                    actual_message: errorMessages.invalid_id(_id)
                   });
                 } else {
                   res.status(statusCodes.server_error).json({
@@ -602,7 +602,7 @@ exports.resetFirstPassword = (req, res) => {
         if(error.kind === ErrorKind.ID) {
           res.status(statusCodes.user_error).json({
             message: errorMessages.invalid_id_tr,
-            actual_message: errorMessages.invalid_id(id)
+            actual_message: errorMessages.invalid_id(_id)
           });
         } else {
           res.status(statusCodes.server_error).json({
