@@ -101,6 +101,61 @@ exports.uploadImagesV2 = (req, res) => {
   }
 }
 
+exports.deleteMultiple = (req, res) => {
+    const path = './images/';
+
+    const albumId = req.params.id;
+    const images = req.body.images;
+
+    if (albumId) {
+        if (images) {
+          try {
+            const countToDelete = images.length;
+            let deletedCount = 0;
+
+            for (const image of images) {
+                Image.deleteOne({ name: image, album_id: albumId })
+                    .then(() => {
+                        fs.unlinkSync(path + image);
+                        deletedCount++;
+
+                        if (deletedCount === countToDelete) {
+                            res.status(statusCodes.success).json({
+                                message: successMessages.image_deleted_tr,
+                                actual_message: successMessages.image_deleted
+                            });
+                        }
+                    })
+                    // .catch(error => {
+                    //     res.status(statusCodes.server_error).json({
+                    //         message: errorMessages.internal_tr,
+                    //         actual_message: errorMessages.internal,
+                    //         error
+                    //     });
+                    // })
+            }
+          } catch (error) {
+            console.log(error);
+              res.status(statusCodes.server_error).json({
+                  message: errorMessages.internal_tr,
+                  actual_message: errorMessages.internal,
+                  error
+              });
+          }
+      } else {
+          res.status(statusCodes.user_error).json({
+              message: errorMessages.enter_image_name_tr,
+              actual_message: errorMessages.please_enter('image name')
+          });
+      }
+    } else {
+          res.status(statusCodes.user_error).json({
+              message: errorMessages.id_missing_tr,
+              actual_message: errorMessages.id_missing
+          });
+    }
+}
+
 exports.delete = (req, res) => {
   const path = './images/';
 

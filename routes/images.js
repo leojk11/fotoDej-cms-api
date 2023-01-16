@@ -11,6 +11,7 @@ router.get('/album/:id', images.getImagesForAlbum);
 
 router.post('/:albumId', images.uploadImagesV2);
 
+router.delete('/:id/images', images.deleteMultiple);
 router.delete('/:id/:image', images.delete);
 
 module.exports = router;
