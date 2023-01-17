@@ -9,10 +9,14 @@ const { generateAlbum, generateCleanModel } = require('../helpers/generateModels
 const { generateDate, generateTime } = require('../helpers/timeDate');
 
 const { ErrorKind } = require('../enums/errorKind');
+const { AdminRole } = require('../enums/adminRole');
 
 const { parseJwt } = require('../middlewares/common');
 
 exports.getAll = (req, res) => {
+
+    const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
 
     let skip = 0;
     if(parseInt(req.query.page) === 1) {
@@ -21,7 +25,13 @@ exports.getAll = (req, res) => {
         skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
     }
 
-    const filters = { active: true };
+	const filters = {};
+
+	if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
+		filters.active = true;
+	}
+
+    // const filters = { active: true };
 
     if (req.query.date) {
         filters.date = req.query.date;
@@ -68,10 +78,21 @@ exports.getAll = (req, res) => {
 }
 
 exports.getSingle = (req, res) => {
+
+    const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
+
     const id = req.params.id;
 
+    const filters = {};
+
     if(id) {
-        Album.find({ _id: id, active: true })
+        filters._id = id;
+        if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
+		    filters.active = true;
+	    }
+        
+        Album.find(filters)
             .then(albums => {
                 if(albums.length === 0) {
                     res.status(statusCodes.user_error).json({
@@ -851,6 +872,69 @@ exports.assignUser = (req, res) => {
                 }
             })
             .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
+        });
+    }
+}
+
+exports.statusChange = (req, res) => {
+    const id = req.params.id;
+    const status = req.params.status;
+
+    if(id) {
+        Album.find({ _id: id })
+            .then(albums => {
+                if(albums.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.album_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Album', id)
+                    });
+                } else {
+                    Album.updateOne(
+                        { _id: id }, 
+                        { active: status }
+                    )
+                        .then(_ => {
+                            res.status(statusCodes.success).json({
+                                message: successMessages.album_status_updated_tr,
+                                actual_message: successMessages.album_status_updated
+                            });
+                        })
+                        .catch(error => {
+                            console.log(error);
+                            if(error.kind === ErrorKind.ID) {
+                                res.status(statusCodes.user_error).json({
+                                    message: errorMessages.invalid_id_tr,
+                                    actual_message: errorMessages.invalid_id(id)
+                                });
+                            } else {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
+                                    error
+                                });
+                            }
+                        })
+                }
+            })
+            .catch(error => {
+                console.log(error)
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
                         message: errorMessages.invalid_id_tr,

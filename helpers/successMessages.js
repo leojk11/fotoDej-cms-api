@@ -25,6 +25,8 @@ exports.successMessages = {
   album_images_selected_tr: 'success.albumImagesSelected',
   album_deleted: (title) => `Album ${ title } has been deleted permanently.`,
   album_deleted_tr: 'success.albumDeleted',
+  album_status_updated: 'Album status has been updated.',
+  album_status_updated_tr: 'success.albumStatusUpdated',
 
   admin_crated: 'Admin has been created.',
   admin_created_tr:  'success.adminCreated',

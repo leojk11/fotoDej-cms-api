@@ -14,6 +14,7 @@ router.get('/:id', verifyToken, albums.getSingle);
 router.post('/', verifyToken, albums.addNew);
 
 router.patch('/:id', verifyToken, albums.edit);
+router.patch('/:id/:status', verifyToken, albums.statusChange);
 
 router.patch('/:id/images', verifyToken, albums.images);
 router.patch('/:id/selected_images', verifyToken, albums.selectedImages);
