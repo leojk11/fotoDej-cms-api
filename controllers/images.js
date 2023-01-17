@@ -30,8 +30,16 @@ exports.getImage = (req, res) => {
 }
 
 exports.getImagesForAlbum = (req, res) => {
+    const imageSearch = req.query.image;
+    const filters = {};
+
     if (req.params.id) {
-        Image.find({ album_id: req.params.id })
+        filters.album_id = req.params.id;
+
+        if (imageSearch) {
+            filters.name = imageSearch;
+        }
+        Image.find(filters)
             .then(images => {
                 const imagesToSend = [];
 
