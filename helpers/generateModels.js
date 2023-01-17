@@ -175,10 +175,21 @@ exports.generateImage = (image) => {
   const newImage = {
     id: image._id,
     name: image.name,
-    album_id: image.album_id
+    album_id: image.album_id,
+    disabled: image.disabled
   };
 
   return newImage;
+}
+
+exports.generateSelectedImages = (selectedImages) => {
+  const newSelectedImages = {
+    id: selectedImages._id,
+    album_id: selectedImages.album_id,
+    images: selectedImages.images
+  };
+
+  return newSelectedImages;
 }
 
 exports.generateConf = (conf) => {

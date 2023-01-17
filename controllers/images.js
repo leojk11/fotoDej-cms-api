@@ -1,12 +1,13 @@
 const fs = require('fs');
 
 const Image = require('../db/models/image');
+const SelectedImages = require('../db/models/selectedImages');
 
 const { errorMessages } = require('../helpers/errorMessages');
 const { statusCodes } = require('../helpers/statusCodes');
 const { successMessages } = require('../helpers/successMessages');
 
-const { generateImage } = require('../helpers/generateModels');
+const { generateImage, generateSelectedImages } = require('../helpers/generateModels');
 
 exports.getImage = (req, res) => {
     if(req.params.img) {
@@ -69,7 +70,8 @@ exports.uploadImagesV2 = (req, res) => {
 
     const imageData = {
         name: file.name,
-        album_id: req.params.albumId
+        album_id: req.params.albumId,
+        disabled: false
     };
 
     Image.insertMany(imageData)
@@ -101,6 +103,152 @@ exports.uploadImagesV2 = (req, res) => {
   }
 }
 
+exports.getSelectedImagesForAlbum = (req, res) => {
+    const albumId = req.params.id;
+
+    if (albumId) {
+        SelectedImages.find({ album_id: albumId })
+            .then(selectedImages => {
+                const selectedToSend = [];
+
+                for (const selectedImage of selectedImages) {
+                    selectedToSend.push(generateSelectedImages(selectedImage));
+                }
+
+                res.status(statusCodes.success).send(selectedToSend);
+            })
+            .catch(error => {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
+                });
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
+        });
+    }
+
+}
+
+exports.selectImages = (req, res) => {
+    const albumId = req.params.id;
+    const images = req.body.images;
+
+    if (albumId) {
+        if (images) {
+            SelectedImages.find({ album_id: albumId })
+                .then(selectedImages => {
+                    if (selectedImages.length > 0) {
+                        SelectedImages.updateOne(
+                            { album_id: albumId },
+                            { images }
+                        )
+                        .then(() => {
+                            res.status(statusCodes.success).json({
+                                message: successMessages.selected_images_updated_tr,
+                                actual_message: successMessages.selected_images_updated
+                            });
+                        })
+                        .catch(error => {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal_tr,
+                                actual_message: errorMessages.internal,
+                                error
+                            });
+                        })
+                    } else {
+                        SelectedImages.insertMany({ album_id: albumId, images })
+                            .then(() => {
+                                res.status(statusCodes.success).json({
+                                    message: successMessages.images_selected_tr,
+                                    actual_message: successMessages.images_selected
+                                });
+                            })
+                            .catch(error => {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
+                                    error
+                                });
+                            })
+                    }
+                })
+                .catch(error => {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error
+                    });
+                })
+        } else {
+            res.status(statusCodes.user_error).json({
+                message: errorMessages.enter_image_name_tr,
+                actual_message: errorMessages.please_enter('image name')
+            });
+        }
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
+        });
+    }
+}
+
+exports.disableImages = (req, res) => {
+    const albumId = req.params.id;
+    const images = req.body.images;
+
+    if (albumId) {
+        if (images) {
+          try {
+            const countToUpdate = images.length;
+            let updatedCount = 0;
+
+            for (const image of images) {
+                Image.updateOne({ name: image, album_id: albumId }, { disabled: true })
+                    .then(() => {
+                        updatedCount++;
+
+                        if (updatedCount === countToUpdate) {
+                            res.status(statusCodes.success).json({
+                                message: successMessages.images_disabled_tr,
+                                actual_message: successMessages.images_disabled
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
+                            error
+                        });
+                    })
+            }
+          } catch (error) {
+            console.log(error);
+              res.status(statusCodes.server_error).json({
+                  message: errorMessages.internal_tr,
+                  actual_message: errorMessages.internal,
+                  error
+              });
+          }
+      } else {
+          res.status(statusCodes.user_error).json({
+              message: errorMessages.enter_image_name_tr,
+              actual_message: errorMessages.please_enter('image name')
+          });
+      }
+    } else {
+          res.status(statusCodes.user_error).json({
+              message: errorMessages.id_missing_tr,
+              actual_message: errorMessages.id_missing
+          });
+    }
+}
+
 exports.deleteMultiple = (req, res) => {
     const path = './images/';
 
@@ -126,13 +274,13 @@ exports.deleteMultiple = (req, res) => {
                             });
                         }
                     })
-                    // .catch(error => {
-                    //     res.status(statusCodes.server_error).json({
-                    //         message: errorMessages.internal_tr,
-                    //         actual_message: errorMessages.internal,
-                    //         error
-                    //     });
-                    // })
+                    .catch(error => {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
+                            error
+                        });
+                    })
             }
           } catch (error) {
             console.log(error);

@@ -9,6 +9,10 @@ const imageSchema = new Schema({
     album_id: {
         type: String,
         required: true
+    },
+    disabled: {
+        type: Boolean,
+        required: true
     }
 });
 

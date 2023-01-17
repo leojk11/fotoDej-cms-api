@@ -39,6 +39,12 @@ exports.successMessages = {
   promo_images_updated_tr: 'success.promoImagesUpdated',
   image_deleted: 'Image has been deleted.',
   image_deleted_tr: 'success.imageDeleted',
+  images_disabled: 'Images have been disabled',
+  images_disabled_tr: 'success.imagesDisabled',
+  images_selected: 'Images have been selected.',
+  images_selected_tr: 'success.imagesSelected',
+  selected_images_updated: 'Selected images have been updated.',
+  selected_images_updated_tr: 'success.selectedImagesUpdated',
 
   upload_success: 'Upload has been successfull.',
   upload_success_tr: 'success.uploadSuccess',
