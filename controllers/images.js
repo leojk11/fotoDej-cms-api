@@ -37,7 +37,7 @@ exports.getImagesForAlbum = (req, res) => {
         filters.album_id = req.params.id;
 
         if (imageSearch) {
-            filters.name = imageSearch;
+            filters.name = { $regex: imageSearch, $options: 'i' };
         }
         Image.find(filters)
             .then(images => {
@@ -202,6 +202,58 @@ exports.selectImages = (req, res) => {
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
         });
+    }
+}
+
+exports.enableImages = (req, res) => {
+    const albumId = req.params.id;
+    const images = req.body.images;
+
+    if (albumId) {
+        if (images) {
+          try {
+            const countToUpdate = images.length;
+            let updatedCount = 0;
+
+            for (const image of images) {
+                Image.updateOne({ name: image, album_id: albumId }, { disabled: false })
+                    .then(() => {
+                        updatedCount++;
+
+                        if (updatedCount === countToUpdate) {
+                            res.status(statusCodes.success).json({
+                                message: successMessages.images_enabled_tr,
+                                actual_message: successMessages.images_enabled
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
+                            error
+                        });
+                    })
+            }
+          } catch (error) {
+            console.log(error);
+              res.status(statusCodes.server_error).json({
+                  message: errorMessages.internal_tr,
+                  actual_message: errorMessages.internal,
+                  error
+              });
+          }
+      } else {
+          res.status(statusCodes.user_error).json({
+              message: errorMessages.enter_image_name_tr,
+              actual_message: errorMessages.please_enter('image name')
+          });
+      }
+    } else {
+          res.status(statusCodes.user_error).json({
+              message: errorMessages.id_missing_tr,
+              actual_message: errorMessages.id_missing
+          });
     }
 }
 

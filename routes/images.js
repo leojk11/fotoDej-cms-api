@@ -14,6 +14,7 @@ router.post('/:albumId', images.uploadImagesV2);
 router.post('/album/:id/select', images.selectImages);
 
 router.patch('/:id/disable', images.disableImages);
+router.patch('/:id/enable', images.enableImages);
 
 router.delete('/:id/images', images.deleteMultiple);
 router.delete('/:id/:image', images.delete);

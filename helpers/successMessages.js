@@ -43,6 +43,8 @@ exports.successMessages = {
   image_deleted_tr: 'success.imageDeleted',
   images_disabled: 'Images have been disabled',
   images_disabled_tr: 'success.imagesDisabled',
+  images_enabled: 'Images have been enabled',
+  images_enabled_tr: 'success.imagesEnabled',
   images_selected: 'Images have been selected.',
   images_selected_tr: 'success.imagesSelected',
   selected_images_updated: 'Selected images have been updated.',
