@@ -21,6 +21,24 @@ exports.getAll = (req, res) => {
 
   const filters = { };
 
+  if (req.query.firstname) {
+    filters.firstname = { $regex: req.query.firstname, $options: 'i' };
+  }
+  if (req.query.lastname) {
+    filters.lastname = { $regex: req.query.lastname, $options: 'i' };
+  }
+  if (req.query.phone) {
+    filters.phone_number = { $regex: req.query.phone, $options: 'i' };
+  }
+  if (req.query.email) {
+    filters.email = { $regex: req.query.email, $options: 'i' };
+  }
+  if (req.query.date) {
+    filters.date = { $regex: req.query.date, $options: 'i' };
+  }
+
+  console.log(filters);
+
   Request.find(filters)
     .sort({ _id: 'desc' })
     .skip(skip)
