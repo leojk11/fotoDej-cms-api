@@ -89,18 +89,24 @@ exports.getForUser = (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
 
+    const filters = {};
+
     if(!req.query.from || !req.query.to) {
         res.status(statusCodes.user_error).json({
             message: errorMessages.dates_need_provided_tr,
             actual_message: errorMessages.dates_need_provided
         });
     } else {
-        Schedule.find({
-            date: {
-                $gte: req.query.from,
-                $lte: req.query.to
-            }
-        })
+        filters.date = {
+            $gte: req.query.from,
+            $lte: req.query.to
+        }
+
+        if (req.query.title) {
+            filters.title = req.query.title;
+        }
+
+        Schedule.find(filters)
             .then(schedules => {
                 const schedulesToSend = [];
 
