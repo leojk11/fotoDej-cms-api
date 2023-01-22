@@ -22,6 +22,16 @@ exports.getAll = (req, res) => {
   }
   const filters = {};
 
+  if (req.query.client) {
+    filters.$or = [
+			{ 'invited_client.firstname': { $regex: req.query.client, $options: 'i'} },
+			{ 'invited_client.lastname': { $regex: req.query.client, $options: 'i'} }  
+		];
+  }
+  if (req.query.date) {
+    filters.date = req.query.date;
+  }
+
   Invite.find(filters)
     .sort({ _id: 'desc' })
     .skip(skip)
