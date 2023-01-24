@@ -63,6 +63,8 @@ exports.errorMessages = {
 
   request_not_exist_tr: 'errors.requestNotExist',
 
+  schedule_not_exist_tr: 'errors.scheduleNotExist',
+
   required_field: (field) => `[Field: ${ field }] is mandatory.`,
   required_field_tr: {
     firstname: 'errors.required.firstname',

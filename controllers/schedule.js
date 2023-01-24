@@ -1,4 +1,5 @@
 const Schedule = require('../db/models/schedule');
+const Location = require('../db/models/location');
 
 const { errorMessages } = require('../helpers/errorMessages');
 const { successMessages } = require('../helpers/successMessages');
@@ -165,6 +166,50 @@ exports.addNew = (req, res) => {
                 });
             })
     }
+}
+
+exports.addNewLocation = (req, res) => {
+    const id = req.params.id;
+    const data = { ...req.body };
+
+    if (id) {
+        Schedule.find({ _id: id })
+            .then(schedules => {
+                if (schedules.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.schedule_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Schedule', id)
+                    });
+                } else {
+                    
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_messsage: errorMessages.id_missing
+        });
+    }
+}
+exports.editLocation = (req, res) => {
+
+}
+exports.deleteLocation = (req, res) => {
+
 }
 
 exports.edit = (req, res) => {
