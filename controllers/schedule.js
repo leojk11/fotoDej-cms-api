@@ -169,6 +169,9 @@ exports.addNew = (req, res) => {
 }
 
 exports.addNewLocation = (req, res) => {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
     const id = req.params.id;
     const data = { ...req.body };
 
@@ -181,7 +184,32 @@ exports.addNewLocation = (req, res) => {
                         actual_message: errorMessages.not_exist('Schedule', id)
                     });
                 } else {
-                    
+                    const locationData = {
+                        title: data.title,
+                        place: data.place,
+
+                        date: schedules[0].date,
+                        time: data.time,
+
+                        schedule_id: schedules[0].id,
+                        user_id: loggedInUser.id
+                    };
+
+                    Location.insertMany(locationData)
+                        .then(() => {
+                            res.status(statusCodes.success).json({
+                                message: successMessages.schedule_created_tr,
+                                actual_message: successMessages.schedule_created,
+                                schedule: generateSchedule(addNewRes[0])
+                            });
+                        })
+                        .catch(error => {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal_tr,
+                                actual_message: errorMessages.internal,
+                                error
+                            });
+                        })
                 }
             })
             .catch(error => {
