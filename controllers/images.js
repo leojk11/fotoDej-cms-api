@@ -123,7 +123,7 @@ exports.getSelectedImagesForAlbum = (req, res) => {
                     selectedToSend.push(generateSelectedImages(selectedImage));
                 }
 
-                res.status(statusCodes.success).send(selectedToSend);
+                res.status(statusCodes.success).send(selectedToSend[0]);
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
@@ -155,10 +155,22 @@ exports.selectImages = (req, res) => {
                             { images }
                         )
                         .then(() => {
-                            res.status(statusCodes.success).json({
-                                message: successMessages.selected_images_updated_tr,
-                                actual_message: successMessages.selected_images_updated
-                            });
+                            SelectedImages.find({ _id: selectedImages[0]._id })
+                                .then(updatedImages => {
+                                    res.status(statusCodes.success).json({
+                                        message: successMessages.selected_images_updated_tr,
+                                        actual_message: successMessages.selected_images_updated,
+                                        selected_images: updatedImages[0]
+                                    });
+                                })
+                                .catch(error => {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal_tr,
+                                        actual_message: errorMessages.internal,
+                                        error
+                                    });
+                                })
+
                         })
                         .catch(error => {
                             res.status(statusCodes.server_error).json({
