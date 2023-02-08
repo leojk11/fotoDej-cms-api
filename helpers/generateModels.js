@@ -171,6 +171,33 @@ exports.generateSchedule = (schedule) => {
   return newSchedule;
 }
 
+exports.generateLocation = (location) => {
+  const newLocation = {
+    id: location._id,
+    title: location.title,
+    place: location.place,
+    date: location.date,
+    time: location.time,
+
+    location_n: location.location_n,
+    schedule_id: location.schedule_id,
+    schedule: location.schedule,
+    user_id: location.user_id,
+
+    created_by: location.created_by,
+    created_by_id: location.created_by_id,
+    created_time: location.created_time,
+    created_date: location.created_date,
+
+    modified_by: location.modified_by,
+    modified_by_id: location.modified_by_id,
+    modified_time: location.modified_time,
+    modified_date: location.modified_date,
+  };
+
+  return newLocation;
+}
+
 exports.generateImage = (image) => {
   const newImage = {
     id: image._id,

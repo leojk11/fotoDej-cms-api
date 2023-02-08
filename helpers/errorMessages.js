@@ -64,6 +64,9 @@ exports.errorMessages = {
   request_not_exist_tr: 'errors.requestNotExist',
 
   schedule_not_exist_tr: 'errors.scheduleNotExist',
+  missing_schedule_or_location: 'You are missing schedule or location id.',
+  missing_schedule_or_location_tr: 'errors.missingScheduleOrLocationId',
+  location_not_exist_tr: 'errors.locationNotExist',
 
   required_field: (field) => `[Field: ${ field }] is mandatory.`,
   required_field_tr: {

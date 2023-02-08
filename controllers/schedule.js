@@ -6,8 +6,9 @@ const { successMessages } = require('../helpers/successMessages');
 const { statusCodes } = require('../helpers/statusCodes');
 const { ErrorKind } = require('../enums/errorKind');
 
-const { generateSchedule } = require('../helpers/generateModels');
+const { generateSchedule, generateLocation } = require('../helpers/generateModels');
 const { parseJwt } = require('../middlewares/common');
+const { generateDate, generateTime } = require('../helpers/timeDate');
 
 exports.getAll = (req, res) => {
     if(!req.query.from || !req.query.to) {
@@ -68,7 +69,7 @@ exports.getSingle = (req, res) => {
                 if(error.kind === ErrorKind.ID) {
                     res.status(statusCodes.user_error).json({
                         message: errorMessages.invalid_id_tr,
-                        actual_message: errorMessages.invalid_id(id)
+                        actual_message: errorMessages.invalid_id(_id)
                     });
                 } else {
                     res.status(statusCodes.server_error).json({
@@ -168,78 +169,6 @@ exports.addNew = (req, res) => {
     }
 }
 
-exports.addNewLocation = (req, res) => {
-    const token = req.headers.authorization;
-    const loggedInUser = parseJwt(token);
-
-    const id = req.params.id;
-    const data = { ...req.body };
-
-    if (id) {
-        Schedule.find({ _id: id })
-            .then(schedules => {
-                if (schedules.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.schedule_not_exist_tr,
-                        actual_message: errorMessages.not_exist('Schedule', id)
-                    });
-                } else {
-                    const locationData = {
-                        title: data.title,
-                        place: data.place,
-
-                        date: schedules[0].date,
-                        time: data.time,
-
-                        schedule_id: schedules[0].id,
-                        user_id: loggedInUser.id
-                    };
-
-                    Location.insertMany(locationData)
-                        .then(() => {
-                            res.status(statusCodes.success).json({
-                                message: successMessages.schedule_created_tr,
-                                actual_message: successMessages.schedule_created,
-                                schedule: generateSchedule(addNewRes[0])
-                            });
-                        })
-                        .catch(error => {
-                            res.status(statusCodes.server_error).json({
-                                message: errorMessages.internal_tr,
-                                actual_message: errorMessages.internal,
-                                error
-                            });
-                        })
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id_tr,
-                        actual_message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing_tr,
-            actual_messsage: errorMessages.id_missing
-        });
-    }
-}
-exports.editLocation = (req, res) => {
-
-}
-exports.deleteLocation = (req, res) => {
-
-}
-
 exports.edit = (req, res) => {
     const id = req.params.id;
 
@@ -321,5 +250,303 @@ exports.delete = (req, res) => {
             message: errorMessages.id_missing_tr,
             actual_messsage: errorMessages.id_missing
         });
+    }
+}
+
+// LOCATIONS
+exports.getAllLocations = (req, res) => {
+    Location.find()
+        .then(locations => {
+            const locationsTosend = [];
+
+            for (const location of locations) {
+                locationsTosend.push(generateLocation(location));
+            }
+
+            res.status(statusCodes.success).send(locationsTosend);
+        })
+        .catch(error => {
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
+            });
+        })
+}
+
+exports.getLocationsForSchedule = (req, res) => {
+    const scheduleId = req.params.id;
+
+    if (scheduleId) {
+        Location.find({ schedule_id: scheduleId })
+            .then(locations => {
+                const locationsToSend = [];
+
+                for (const location of locations) {
+                    locationsToSend.push(generateLocation(location));
+                }
+
+                res.status(statusCodes.success).send(locationsToSend);
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_messsage: errorMessages.id_missing
+        });
+    }
+}
+
+exports.addNewLocation = (req, res) => {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    const id = req.params.id;
+    const data = { ...req.body };
+
+    if (id) {
+        Schedule.find({ _id: id })
+            .then(schedules => {
+                if (schedules.length === 0) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.schedule_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Schedule', id)
+                    });
+                } else {
+                    const locationData = {
+                        title: data.title,
+                        place: data.place,
+
+                        date: schedules[0].date,
+                        time: data.time,
+
+                        schedule_id: schedules[0].id,
+                        schedule: generateSchedule(schedules[0]),
+                        user_id: loggedInUser.id,
+
+                        created_by: loggedInUser,
+                        created_by_id: loggedInUser.id,
+                        created_date: generateDate(),
+                        created_time: generateTime()
+                    };
+
+                    Location.insertMany(locationData)
+                        .then(addNewLocationRes => {
+                            res.status(statusCodes.success).json({
+                                message: successMessages.location_created_tr,
+                                actual_message: successMessages.location_created,
+                                location: generateLocation(addNewLocationRes[0])
+                            });
+                        })
+                        .catch(error => {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal_tr,
+                                actual_message: errorMessages.internal,
+                                error
+                            });
+                        })
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_messsage: errorMessages.id_missing
+        });
+    }
+}
+
+exports.editLocation = (req, res) => {
+    const scheduleId = req.params.id;
+    const locationId = req.params.location_id;
+
+    if (!scheduleId || !locationId) {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.missing_schedule_or_location_tr,
+            actual_message: errorMessages.missing_schedule_or_location
+        });
+    } else {
+        Schedule.find({ _id: scheduleId })
+            .then(schedules => {
+                if (schedules.length === 0) {
+                    res.status(statusCodes.not_found).json({
+                        message: errorMessages.not_exist('Schedules', scheduleId),
+                        actual_message: errorMessages.schedule_not_exist_tr
+                    });
+                } else {
+                    Location.find({ _id: locationId })
+                        .then(locations => {
+                            if (locations.length === 0) {
+                                res.status(statusCodes.not_found).json({
+                                    message: errorMessages.location_not_exist_tr,
+                                    actual_message: errorMessages.not_exist('Location', locationId)
+                                });
+                            } else {
+                                const data = { ...req.body };
+
+                                Location.updateOne(
+                                    { _id: locationId },
+                                    data
+                                )
+                                .then(() => {
+                                    res.status(statusCodes.success).json({
+                                        message: successMessages.location_updated_tr,
+                                        actual_message: successMessages.location_updated
+                                    });
+                                })
+                                .catch(error => {
+                                    if(error.kind === ErrorKind.ID) {
+                                        res.status(statusCodes.user_error).json({
+                                            message: errorMessages.invalid_id_tr,
+                                            actual_message: errorMessages.invalid_id(id)
+                                        });
+                                    } else {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal_tr,
+                                            actual_message: errorMessages.internal,
+                                            error
+                                        });
+                                    }
+                                })
+                            }
+                        })
+                        .catch(error => {
+                            if(error.kind === ErrorKind.ID) {
+                                res.status(statusCodes.user_error).json({
+                                    message: errorMessages.invalid_id_tr,
+                                    actual_message: errorMessages.invalid_id(id)
+                                });
+                            } else {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
+                                    error
+                                });
+                            }
+                        })
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
+    }
+}
+
+exports.deleteLocation = (req, res) => {
+    const scheduleId = req.params.id;
+    const locationId = req.params.location_id;
+
+    if (!scheduleId || !locationId) {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.missing_schedule_or_location_tr,
+            actual_message: errorMessages.missing_schedule_or_location
+        });
+    } else {
+        Schedule.find({ _id: scheduleId })
+            .then(schedules => {
+                if (schedules.length === 0) {
+                    res.status(statusCodes.not_found).json({
+                        message: errorMessages.not_exist('Schedules', scheduleId),
+                        actual_message: errorMessages.schedule_not_exist_tr
+                    });
+                } else {
+                    Location.find({ _id: locationId })
+                        .then(locations => {
+                            if (locations.length === 0) {
+                                res.status(statusCodes.not_found).json({
+                                    message: errorMessages.location_not_exist_tr,
+                                    actual_message: errorMessages.not_exist('Location', locationId)
+                                });
+                            } else {
+                                Location.deleteOne({ _id: locationId })
+                                    .then(() => {
+                                        res.status(statusCodes.success).json({
+                                            message: successMessages.location_deleted_tr,
+                                            actual_message: successMessages.location_deleted
+                                        });
+                                    })
+                                    .catch(error => {
+                                        if(error.kind === ErrorKind.ID) {
+                                            res.status(statusCodes.user_error).json({
+                                                message: errorMessages.invalid_id_tr,
+                                                actual_message: errorMessages.invalid_id(id)
+                                            });
+                                        } else {
+                                            res.status(statusCodes.server_error).json({
+                                                message: errorMessages.internal_tr,
+                                                actual_message: errorMessages.internal,
+                                                error
+                                            });
+                                        }
+                                    })
+                            }
+                        })
+                        .catch(error => {
+                            if(error.kind === ErrorKind.ID) {
+                                res.status(statusCodes.user_error).json({
+                                    message: errorMessages.invalid_id_tr,
+                                    actual_message: errorMessages.invalid_id(id)
+                                });
+                            } else {
+                                res.status(statusCodes.server_error).json({
+                                    message: errorMessages.internal_tr,
+                                    actual_message: errorMessages.internal,
+                                    error
+                                });
+                            }
+                        })
+                }
+            })
+            .catch(error => {
+                if(error.kind === ErrorKind.ID) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.invalid_id_tr,
+                        actual_message: errorMessages.invalid_id(id)
+                    });
+                } else {
+                    res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error
+                    });
+                }
+            })
     }
 }

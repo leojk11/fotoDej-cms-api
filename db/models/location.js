@@ -24,7 +24,41 @@ const locationSchema = new Schema({
 	schedule_id: {
 		type: String
 	},
+	schedule: {
+		type: Object
+	},
 	user_id: {
+		type: String
+	},
+
+	// internal data
+	created_by: {
+		type: Object,
+		required: true
+	},
+	created_by_id: {
+		type: String,
+		required: true
+	},
+	created_date: {
+		type: String,
+		required: true
+	},
+	created_time: {
+		type: String,
+		required: true
+	},
+	
+	modified_by: {
+		type: String
+	},
+	modified_by_id: {
+		type: String
+	},
+	modified_date: {
+		type: String
+	},
+	modified_time: {
 		type: String
 	}
 });

@@ -826,7 +826,7 @@ exports.delete = (req, res) => {
   }
 }
 
-exports.invite = (req, res) => {
+exports.invite = async(req, res) => {
   const id = req.params.id;
   const email = req.body.email;
 

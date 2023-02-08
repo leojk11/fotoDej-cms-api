@@ -61,6 +61,10 @@ exports.successMessages = {
   schedule_deleted_tr: 'success.scheduleDeleted',
   location_created: 'New location has been created.',
   location_created_tr: 'success.locationCreated',
+  location_updated: 'Location has been updated.',
+  location_updated_tr: 'success.locationUpdated',
+  location_deleted: 'Location has been deleted.',
+  location_deleted_tr: 'success.locationDeleted',
 
   request_created: 'New request has been created.',
   request_created_tr: 'success.requestCreated'
