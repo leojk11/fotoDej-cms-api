@@ -29,7 +29,9 @@ const clientSchema = new Schema({
   first_password: {
     type: String
   },
-
+  role: {
+    type: String
+  },
   profile_image: {
     type: String
   },
