@@ -1,5 +1,6 @@
 const Admin = require('../db/models/admin');
 const Client = require('../db/models/client');
+const ClientLog = require('../db/models/clientLog');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -8,8 +9,10 @@ const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
 const { successMessages } = require('../helpers/successMessages');
 const { generateCleanModel } = require('../helpers/generateModels');
+const { generateDate, generateTime } = require('../helpers/timeDate');
 
 const { loginCommands } = require('../enums/commands');
+const { ClientLogAction } = require('../enums/clientLogAction');
 
 exports.adminLogin = (req, res) => {
     const data = { ...req.body };
@@ -109,13 +112,31 @@ exports.clientLogin = (req, res) => {
                                     process.env.SECRET,
                                     { expiresIn: '1h' }
                                 );
-        
-                                res.status(statusCodes.success).json({
-                                    message: successMessages.logged_in_successfully_tr,
-                                    actual_message: successMessages.logged_in_successfully,
-                                    token,
-                                    user: generateCleanModel(users[0])
-                                });
+
+                                const logData = {
+                                    action: ClientLogAction.LOGIN,
+                                    client_id: users[0]._id,
+                                    client: generateCleanModel(users[0]),
+                                    date: generateDate(),
+                                    time: generateTime()
+                                };
+
+                                ClientLog.insertMany(logData)
+                                    .then(() => {
+                                        res.status(statusCodes.success).json({
+                                            message: successMessages.logged_in_successfully_tr,
+                                            actual_message: successMessages.logged_in_successfully,
+                                            token,
+                                            user: generateCleanModel(users[0])
+                                        });
+                                    })
+                                    .catch(error => {
+                                        res.status(statusCodes.server_error).json({
+                                            message: errorMessages.internal_tr,
+                                            actual_message: errorMessages.internal,
+                                            error
+                                        });
+                                    })
                             } else {
                                 res.status(statusCodes.user_error).json({
                                     message: errorMessages.password_not_correct_tr,

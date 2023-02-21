@@ -275,3 +275,16 @@ exports.generateRequest = (req) => {
   return newReq;
 }
 
+exports.generateClientLog = (clientLog) => {
+  const newClientLog = {
+    id: clientLog._id,
+    action: clientLog.action,
+    client: clientLog.client,
+    client_id: clientLog.client_id,
+    date: clientLog.date,
+    time: clientLog.time
+  };
+
+  return newClientLog;
+}
+

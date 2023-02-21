@@ -25,6 +25,7 @@ const inviteRoutes = require('../routes/invite');
 const organizationRoutes = require('../routes/organization');
 const requestsRoutes = require('../routes/requests');
 const dashboardRoutes = require('../routes/dashboard');
+const clientLogsRoutes = require('../routes/clientLog');
 
 mainRouter.use('/users', userRoutes);
 mainRouter.use('/admin', adminRoutes);
@@ -37,5 +38,6 @@ mainRouter.use('/invites', inviteRoutes);
 mainRouter.use('/organizations', organizationRoutes);
 mainRouter.use('/requests', requestsRoutes);
 mainRouter.use('/dashboard', dashboardRoutes);
+mainRouter.use('/client_logs', clientLogsRoutes);
 
 module.exports = mainRouter;
