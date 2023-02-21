@@ -102,7 +102,7 @@ exports.edit = (req, res) => {
                     res.status(statusCodes.success).json({
                         message: successMessages.configuration_updated_tr,
                         actual_message: successMessages.configuration_updated,
-                        configuration: conf
+                        configuration: generateConf(conf)
                     });
                 })
             } else {

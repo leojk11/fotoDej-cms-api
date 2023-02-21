@@ -223,11 +223,15 @@ exports.generateConf = (conf) => {
   const newConf = {
     id: conf._id,
     logo: conf.logo,
+    logo_white: conf.logo_white,
+    logo_icon: conf.logo_icon,
     main_image: conf.main_image,
     main_title: conf.main_title,
+    main_title_tr: conf.main_title_tr,
     second_title: conf.second_title,
+    second_title_tr: conf.second_title_tr,
     promo_video: conf.promo_video,
-    contact_form_label: conf.contact_form_label,
+    contact_form_label: null, // will be completely removed in the feature
     phone_number: conf.phone_number,
     email: conf.email,
     address: conf.address,
