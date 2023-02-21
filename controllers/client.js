@@ -1,5 +1,6 @@
 const Client = require('../db/models/client');
 const Invite = require('../db/models/invite');
+const ClientLog = require('../db/models/clientLog');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -15,6 +16,7 @@ const { generateDate, generateTime } = require('../helpers/timeDate');
 const { ErrorKind } = require('../enums/errorKind');
 const { AccountStatus } = require('../enums/accountStatus');
 const { AdminRole } = require('../enums/adminRole');
+const { ClientLogAction } = require('../enums/clientLogAction');
 
 const { parseJwt } = require('../middlewares/common');
 
@@ -563,12 +565,30 @@ exports.resetFirstPassword = (req, res) => {
                   { expiresIn: '1h' }
                 );
 
-                res.status(200).json({
-                  message: successMessages.logged_in_successfully_tr,
-                  actual_message: 'Logged in successfully',
-                  token,
-                  user: generateCleanModel(clients[0])
-                });
+                const logData = {
+                  action: ClientLogAction.ACTIVATE_ACCOUNT,
+                  client_id: clients[0]._id,
+                  client: generateCleanModel(clients[0]),
+                  date: generateDate(),
+                  time: generateTime()
+                };
+
+                ClientLog.insertMany(logData)
+                  .then(() => {
+                    res.status(200).json({
+                      message: successMessages.logged_in_successfully_tr,
+                      actual_message: 'Logged in successfully',
+                      token,
+                      user: generateCleanModel(clients[0])
+                    });
+                  })
+                  .catch(error => {
+                    res.status(statusCodes.server_error).json({
+                      message: errorMessages.internal_tr,
+                      actual_message: errorMessages.internal,
+                      error: error
+                    });
+                  })
               })
               .catch(error => {
                 if(error.kind === ErrorKind.ID) {

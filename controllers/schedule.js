@@ -87,6 +87,10 @@ exports.getSingle = (req, res) => {
     }
 }
 
+exports.getUpcoming = (req, res) => {
+    
+}
+
 exports.getForUser = (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
