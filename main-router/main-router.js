@@ -24,6 +24,7 @@ const configuration = require('../routes/feConfiguration');
 const inviteRoutes = require('../routes/invite');
 const organizationRoutes = require('../routes/organization');
 const requestsRoutes = require('../routes/requests');
+const dashboardRoutes = require('../routes/dashboard');
 
 mainRouter.use('/users', userRoutes);
 mainRouter.use('/admin', adminRoutes);
@@ -35,5 +36,6 @@ mainRouter.use('/conf', configuration);
 mainRouter.use('/invites', inviteRoutes);
 mainRouter.use('/organizations', organizationRoutes);
 mainRouter.use('/requests', requestsRoutes);
+mainRouter.use('/dashboard', dashboardRoutes);
 
 module.exports = mainRouter;
