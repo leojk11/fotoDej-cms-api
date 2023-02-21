@@ -854,21 +854,80 @@ exports.invite = async(req, res) => {
             from: 'FotoDej',
             subject: 'Invite!',
             html: `
-              <body style="padding: 0; margin: 0; background-color: rgba(223, 221, 220, 0.4);">
-                <div style="width: 100%; background-color: #0a2c55; text-align: center; padding: 0.1rem;">
-                  <h1 style="color: #ffffff">FotoDej</h1>
+              <body style="margin: 0px;">
+              <div style="max-width: 650px; width: 100%; background-color: #ffffff; padding: 50px; font-family: Open Sans, sans-serif; color: #25476a; font-size: 24px; overflow: hidden;">
+                <div>
+                  <img 
+                    style="width: 120px; height: auto;"
+                    src="https://drive.google.com/uc?export=view&id=1bM3l5yEi1OpSUgl5TIKCLlz6bbERacXd">
                 </div>
-            
-                <div style="width: 100%; text-align: center; margin-top: 1rem;">
-                  <h1 style="margin: 0;">Invite to login into FotoDej system</h1>
           
-                  <h2 style="text-decoration: underline; margin: 0; margin-top: 2rem;">Email to login</h2>
-                  <h3 style="margin: 0; font-weight: normal;">${ email ? email : clients[0].email }</h3>
-          
-                  <h2 style="text-decoration: underline; margin: 0; margin-top: 1rem;">Password to login</h2>
-                  <h3 style="margin: 0; font-weight: normal;">${ clients[0].first_password }</h3>
+                <div style="position: relative; z-index: 2;">
+                  <p style="line-height: 91%; margin-top: 50px; margin-bottom: 45px;">
+                    Здраво <span style="font-weight: bold;">Бојана</span>,
+                  </p>
+                  <p style="max-width: 300px; line-height: 100%; margin-bottom: 13px;">
+                    Ова се вашите податоци за најава:
+                  </p>
+                  <div style="line-height: 130%; margin-bottom: 70px;">
+                    <p>
+                      <span style="font-size: 24px; opacity: 0.7; margin-right: 11px;">емаил:</span>
+                      <span style="font-weight: bold; color: #25476a;">${ email ? email : clients[0].email }</span>
+                    </p>
+                    <p>
+                      <span style="font-size: 24px; opacity: 0.7; margin-right: 11px;">лозинка:</span>
+                      <span style="font-weight: bold;">${ clients[0].first_password }</span>
+                    </p>
+                  </div>
+                  <p style="max-width: 372px; line-height: 100%;">
+                    Кликнете на следниот линк за да се упатите кон најава
+                  </p>
+                  <a style="background-color: #25476a; width: 197px; height: 44px; border-radius: 10px; box-shadow: 2px 2px 7px -1px rgba(68, 68, 68, 0.3); padding: 0; color: #ffffff; text-decoration: none; line-height: 30px; font-weight: 600; font-size: 20px; margin-top: 23px; transition: 0.3s ease-in-out; padding: 10px 60px;" 
+                    href="${ req.headers.origin }"> Најава </a>
+                  <p style="font-weight: 600; line-height: 91%; font-size: 15px; margin-top: 75px; margin-bottom: 30px;">
+                    Ви благодариме на довербата!</p>
                 </div>
-              </body>
+                <div style="width: 100%; z-index: 2;">
+                  <div style="float: left; display: inline-block; clear: both;">
+                    <div style="display: flex; align-items: center; margin-bottom: 4px; transition: 0.3s ease-in-out; cursor: pointer;"
+                      onMouseOver="this.style.opacity='0.7'"
+                      onMouseOut="this.style.opacity='1'">
+                      <div style="font-size: 14px; margin-right: 15px;">
+                        <img src="https://drive.google.com/uc?export=view&id=1QE_s0Khk1nfkSBwLa-hUnypWd7LB6fJp">
+                      </div>
+                      <a style="font-size: 13px; color: #25476a; text-decoration: none; font-weight: 600; line-height: 18px;" 
+                        href="tel: 077 123 123">077 123 123</a>
+                    </div>
+          
+                    <div style="display: flex; align-items: center; margin-bottom: 4px; transition: 0.3s ease-in-out; cursor: pointer;"
+                      onMouseOver="this.style.opacity='0.7'"
+                      onMouseOut="this.style.opacity='1'">
+                      <div style="font-size: 14px; margin-right: 15px;">
+                        <img src="https://drive.google.com/uc?export=view&id=1sS7AZ3sBTeglrvubtEGCCCeqL3-zeJOu">
+                      </div>
+                      <a style="font-size: 13px; color: #25476a; text-decoration: none; font-weight: 600; line-height: 18px;"
+                        href="mailto:fotodej@gmail.com">fotodej@gmail.com</a>
+                    </div>
+          
+                    <div style="display: flex; align-items: center; margin-bottom: 4px; transition: 0.3s ease-in-out; cursor: pointer;"
+                      onMouseOver="this.style.opacity='0.7'"
+                      onMouseOut="this.style.opacity='1'">
+                      <div style="font-size: 14px; margin-right: 15px;">
+                        <img src="https://drive.google.com/uc?export=view&id=11owzBfMBXrHX0j4otpIlARg46zxp0DAs">
+                      </div>
+                      <a style="font-size: 13px; color: #25476a; text-decoration: none; font-weight: 600; line-height: 18px;"
+                        href="#">адреса ул. Улица бр.1</a>
+                    </div>
+                  </div>
+          
+                  <div style="float: right; clear: both; display: inline-block;">
+                    <img    
+                      style="width: 120px;"
+                      src="https://drive.google.com/uc?export=view&id=1bM3l5yEi1OpSUgl5TIKCLlz6bbERacXd">
+                  </div>
+                </div>
+              </div>
+            </body>
             `
           };
 
