@@ -896,7 +896,7 @@ exports.invite = async(req, res) => {
           
                 <div style="position: relative; z-index: 2;">
                   <p style="line-height: 91%; margin-top: 50px; margin-bottom: 45px;">
-                    Здраво <span style="font-weight: bold;">Бојана</span>,
+                    Здраво <span style="font-weight: bold;">${ clients[0].firstname } ${ clients[0].lastname }</span>,
                   </p>
                   <p style="max-width: 300px; line-height: 100%; margin-bottom: 13px;">
                     Ова се вашите податоци за најава:
