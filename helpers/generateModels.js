@@ -254,6 +254,8 @@ exports.generateInvite = (invite) => {
     invited_by: invite.invited_by,
     invited_by_id: invite.invited_by_id,
 
+    status: invite.status,
+
     date: invite.date,
     time: invite.time
   };

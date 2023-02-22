@@ -17,6 +17,7 @@ const { ErrorKind } = require('../enums/errorKind');
 const { AccountStatus } = require('../enums/accountStatus');
 const { AdminRole } = require('../enums/adminRole');
 const { ClientLogAction } = require('../enums/clientLogAction');
+const { InviteStatus } = require('../enums/inviteStatus');
 
 const { parseJwt } = require('../middlewares/common');
 
@@ -24,8 +25,6 @@ exports.getAll = (req, res) => {
 
 	const token = req.headers.authorization;
 	const loggedInUser = parseJwt(token);
-
-  console.log(loggedInUser);
 
 	let skip = 0;
 	if(parseInt(req.query.page) === 1) {
@@ -57,7 +56,7 @@ exports.getAll = (req, res) => {
 	}
 
 	Client.find(filters)
-		.sort({ _id: 'desc' })
+		.sort({ _id: 'asc' })
 		.skip(skip)
 		.limit(parseInt(req.query.take))
 		.then(clients => {
@@ -565,30 +564,43 @@ exports.resetFirstPassword = (req, res) => {
                   { expiresIn: '1h' }
                 );
 
-                const logData = {
-                  action: ClientLogAction.ACTIVATE_ACCOUNT,
-                  client_id: clients[0]._id,
-                  client: generateCleanModel(clients[0]),
-                  date: generateDate(),
-                  time: generateTime()
-                };
-
-                ClientLog.insertMany(logData)
-                  .then(() => {
-                    res.status(200).json({
-                      message: successMessages.logged_in_successfully_tr,
-                      actual_message: 'Logged in successfully',
-                      token,
-                      user: generateCleanModel(clients[0])
-                    });
-                  })
-                  .catch(error => {
-                    res.status(statusCodes.server_error).json({
-                      message: errorMessages.internal_tr,
-                      actual_message: errorMessages.internal,
-                      error: error
-                    });
-                  })
+                Invite.find(
+                  { invited_client_id: clients[0]._id, status: InviteStatus.SUCCESSFULL },
+                  { status: InviteStatus.ACCEPTED }
+                )
+                .then(() => {
+                  const logData = {
+                    action: ClientLogAction.ACTIVATE_ACCOUNT,
+                    client_id: clients[0]._id,
+                    client: generateCleanModel(clients[0]),
+                    date: generateDate(),
+                    time: generateTime()
+                  };
+  
+                  ClientLog.insertMany(logData)
+                    .then(() => {
+                      res.status(statusCodes.success).json({
+                        message: successMessages.logged_in_successfully_tr,
+                        actual_message: 'Logged in successfully',
+                        token,
+                        user: generateCleanModel(clients[0])
+                      });
+                    })
+                    .catch(error => {
+                      res.status(statusCodes.server_error).json({
+                        message: errorMessages.internal_tr,
+                        actual_message: errorMessages.internal,
+                        error: error
+                      });
+                    })
+                })
+                .catch(error => {
+                  res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error: error
+                  });
+                })
               })
               .catch(error => {
                 if(error.kind === ErrorKind.ID) {
@@ -967,16 +979,65 @@ exports.invite = async(req, res) => {
                 invited_by: loggedInUser,
                 invited_by_id: loggedInUser.id,
 
+                status: InviteStatus.SUCCESSFULL,
+
                 date: generateDate(),
                 time: generateTime()
               };
 
-              Invite.insertMany(invite)
-                .then(() => {
-                  res.status(statusCodes.success).json({
-                    message: successMessages.email_sent_tr,
-                    actual_message: successMessages.email_sent
-                  });
+              Invite.find({ invited_client_id: clients[0]._id })
+                .then(invites => {
+                  if (invites.length > 0) {
+                    Invite.updateOne(
+                      { _id: invites[0]._id },
+                      { status: InviteStatus.FAILED }
+                    )
+                    .then(() => {
+                      Invite.insertMany(invite)
+                        .then(() => {
+                          res.status(statusCodes.success).json({
+                            message: successMessages.email_sent_tr,
+                            actual_message: successMessages.email_sent
+                          });
+                        })
+                        .catch(error => {
+                          res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
+                            error: error
+                          });
+                        })
+                    })
+                    .catch(error => {
+                      if(error.kind === ErrorKind.ID) {
+                        res.status(statusCodes.user_error).json({
+                          message: errorMessages.invalid_id_tr,
+                          actual_message: errorMessages.invalid_id(id)
+                        });
+                      } else {
+                        res.status(statusCodes.server_error).json({
+                          message: errorMessages.internal_tr,
+                          actual_message: errorMessages.internal,
+                          error: error
+                        });
+                      }
+                    })
+                  } else {
+                    Invite.insertMany(invite)
+                      .then(() => {
+                        res.status(statusCodes.success).json({
+                          message: successMessages.email_sent_tr,
+                          actual_message: successMessages.email_sent
+                        });
+                      })
+                      .catch(error => {
+                        res.status(statusCodes.server_error).json({
+                          message: errorMessages.internal_tr,
+                          actual_message: errorMessages.internal,
+                          error: error
+                        });
+                      })
+                  }
                 })
                 .catch(error => {
                   res.status(statusCodes.server_error).json({

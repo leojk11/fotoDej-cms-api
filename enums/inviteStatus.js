@@ -1,0 +1,6 @@
+exports.InviteStatus = {
+  SUCCESSFULL: 'SUCCESSFULL',
+  FAILED: 'FAILED',
+  EXPIRED: 'EXPIRED',
+  ACCEPTED: 'ACCEPTED'
+};
