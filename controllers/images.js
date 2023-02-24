@@ -2,12 +2,17 @@ const fs = require('fs');
 
 const Image = require('../db/models/image');
 const SelectedImages = require('../db/models/selectedImages');
+const ClientLog = require('../db/models/clientLog');
 
 const { errorMessages } = require('../helpers/errorMessages');
 const { statusCodes } = require('../helpers/statusCodes');
 const { successMessages } = require('../helpers/successMessages');
-
+const { generateTime, generateDate } = require('../helpers/timeDate');
 const { generateImage, generateSelectedImages } = require('../helpers/generateModels');
+
+const { ClientLogAction } = require('../enums/clientLogAction');
+
+const { parseJwt } = require('../middlewares/common');
 
 exports.getImage = (req, res) => {
     if(req.params.img) {
@@ -142,6 +147,10 @@ exports.getSelectedImagesForAlbum = (req, res) => {
 }
 
 exports.selectImages = (req, res) => {
+
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
     const albumId = req.params.id;
     const images = req.body.images;
 
@@ -157,11 +166,29 @@ exports.selectImages = (req, res) => {
                         .then(() => {
                             SelectedImages.find({ _id: selectedImages[0]._id })
                                 .then(updatedImages => {
-                                    res.status(statusCodes.success).json({
-                                        message: successMessages.selected_images_updated_tr,
-                                        actual_message: successMessages.selected_images_updated,
-                                        selected_images: updatedImages[0]
-                                    });
+                                    const logData = {
+                                        action: ClientLogAction.LOGIN,
+                                        client_id: loggedInUser.id,
+                                        client: loggedInUser,
+                                        date: generateDate(),
+                                        time: generateTime()
+                                    };
+
+                                    ClientLog.insertMany(logData)
+                                        .then(() => {
+                                            res.status(statusCodes.success).json({
+                                                message: successMessages.selected_images_updated_tr,
+                                                actual_message: successMessages.selected_images_updated,
+                                                selected_images: updatedImages[0]
+                                            });
+                                        })
+                                        .catch(error => {
+                                            res.status(statusCodes.server_error).json({
+                                                message: errorMessages.internal_tr,
+                                                actual_message: errorMessages.internal,
+                                                error
+                                            });
+                                        })
                                 })
                                 .catch(error => {
                                     res.status(statusCodes.server_error).json({
