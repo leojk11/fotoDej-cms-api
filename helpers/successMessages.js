@@ -67,5 +67,7 @@ exports.successMessages = {
   location_deleted_tr: 'success.locationDeleted',
 
   request_created: 'New request has been created.',
-  request_created_tr: 'success.requestCreated'
+  request_created_tr: 'success.requestCreated',
+  request_contacted: 'Request has been marked as CONTACTED.',
+  request_contacted_tr: 'success.requestContacted'
 };

@@ -270,6 +270,7 @@ exports.generateRequest = (req) => {
     lastname: req.lastname,
     phone_number: req.phone_number,
     email: req.email,
+    status: req.status,
     time: req.time,
     date: req.date
   };

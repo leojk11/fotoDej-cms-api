@@ -62,6 +62,8 @@ exports.errorMessages = {
   dates_need_provided_tr: 'errors.datesNeedToBeProvided',
 
   request_not_exist_tr: 'errors.requestNotExist',
+  invalid_request_status: 'You have set invalid request status. [PENDING, CONTACTED]',
+  invalid_request_status_tr: 'errors.invalidRequestStatus',
 
   schedule_not_exist_tr: 'errors.scheduleNotExist',
   missing_schedule_or_location: 'You are missing schedule or location id.',

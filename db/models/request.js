@@ -18,6 +18,10 @@ const requestSchema = new Schema({
     type: String
   },
 
+  status: {
+    type: String
+  },
+
   date: {
     type: String,
     required: true

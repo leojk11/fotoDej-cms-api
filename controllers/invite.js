@@ -2,9 +2,9 @@ const Invite = require('../db/models/invite');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
-
 const { generateInvite } = require('../helpers/generateModels');
 
+const { InviteStatus } = require('../enums/inviteStatus');
 const { ErrorKind } = require('../enums/errorKind');
 
 const { parseJwt } = require('../middlewares/common');
