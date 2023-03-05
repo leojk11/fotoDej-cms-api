@@ -2,9 +2,11 @@ const Request = require('../db/models/request');
 
 const { generateDate, generateTime } = require('../helpers/timeDate');
 const { generateRequest } = require('../helpers/generateModels');
+const { insertNotificaton } = require('../helpers/notificationTools');
 
 const { ErrorKind } = require('../enums/errorKind');
 const { RequestStatus } = require('../enums/requestStatus');
+const { NotificationType } = require('../enums/notificationType');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
@@ -153,7 +155,9 @@ exports.addNew = (req, res) => {
     });
   } else {
     Request.insertMany(data)
-      .then(() => {
+      .then(async () => {
+        await insertNotificaton(NotificationType.REQUEST_SENT, null, new Date(), null);
+
         res.status(statusCodes.success).json({
           message: successMessages.request_created_tr,
           actual_message: successMessages.request_created

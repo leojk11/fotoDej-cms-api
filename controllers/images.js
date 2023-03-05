@@ -9,8 +9,10 @@ const { statusCodes } = require('../helpers/statusCodes');
 const { successMessages } = require('../helpers/successMessages');
 const { generateTime, generateDate } = require('../helpers/timeDate');
 const { generateImage, generateSelectedImages } = require('../helpers/generateModels');
+const { insertNotificaton } = require('../helpers/notificationTools');
 
 const { ClientLogAction } = require('../enums/clientLogAction');
+const { NotificationType } = require('../enums/notificationType');
 
 const { parseJwt } = require('../middlewares/common');
 
@@ -175,7 +177,14 @@ exports.selectImages = (req, res) => {
                                     };
 
                                     ClientLog.insertMany(logData)
-                                        .then(() => {
+                                        .then(async () => {
+                                            await insertNotificaton(
+                                                NotificationType.SELECTED_IMAGES,
+                                                loggedInUser,
+                                                new Date(),
+                                                null
+                                            );
+                                            
                                             res.status(statusCodes.success).json({
                                                 message: successMessages.selected_images_updated_tr,
                                                 actual_message: successMessages.selected_images_updated,

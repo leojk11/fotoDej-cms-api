@@ -12,12 +12,14 @@ const { errorMessages } = require('../helpers/errorMessages');
 const { successMessages } = require('../helpers/successMessages');
 const { generateClient, generateCleanModel } = require('../helpers/generateModels');
 const { generateDate, generateTime } = require('../helpers/timeDate');
+const { insertNotificaton } = require('../helpers/notificationTools');
 
 const { ErrorKind } = require('../enums/errorKind');
 const { AccountStatus } = require('../enums/accountStatus');
 const { AdminRole } = require('../enums/adminRole');
 const { ClientLogAction } = require('../enums/clientLogAction');
 const { InviteStatus } = require('../enums/inviteStatus');
+const { NotificationType } = require('../enums/notificationType');
 
 const { parseJwt } = require('../middlewares/common');
 
@@ -578,7 +580,13 @@ exports.resetFirstPassword = (req, res) => {
                   };
   
                   ClientLog.insertMany(logData)
-                    .then(() => {
+                    .then(async() => {
+                      await insertNotificaton(
+                        NotificationType.ACCEPTED_INVITATION, 
+                        generateCleanModel(clients[0]), 
+                        new Date(), null
+                      );
+
                       res.status(statusCodes.success).json({
                         message: successMessages.logged_in_successfully_tr,
                         actual_message: 'Logged in successfully',

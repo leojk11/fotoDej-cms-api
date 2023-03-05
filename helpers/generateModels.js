@@ -291,3 +291,16 @@ exports.generateClientLog = (clientLog) => {
   return newClientLog;
 }
 
+exports.generateNotification = (notification) => {
+  const newNotification = {
+    id: notification._id,
+    client: notification.client,
+    client_id: notification.client_id,
+    event_info: notification.event_info,
+    message: notification.message,
+    date: notification.date,
+    time: notification.time
+  };
+
+  return newNotification;
+}
