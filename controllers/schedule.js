@@ -139,10 +139,17 @@ exports.addNew = (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
 
+    const date = new Date();
+    date.setHours(00, 0, 0, 0);
+
     const data = {
         ...req.body,
-        user_id: loggedInUser.id
+        user_id: loggedInUser.id,
+
+        timestamp: date
     };
+
+    // console.log(data);
 
     if (!data.title || data.title === '') {
         res.status(statusCodes.user_error).json({
@@ -171,6 +178,8 @@ exports.addNew = (req, res) => {
                 });
             })
     }
+
+    // res.status(200).send('ok');
 }
 
 exports.edit = (req, res) => {

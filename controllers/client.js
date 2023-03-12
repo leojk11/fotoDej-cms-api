@@ -56,6 +56,17 @@ exports.getAll = (req, res) => {
 	if (req.params.email) {
 		filters.email = { $regex: req.query.email, $options: 'i' };
 	}
+  if (req.params.status) {
+    if(req.query.status !== AccountStatus.ACTIVE && req.query.status !== AccountStatus.SUSPENDED) {
+      res.status(statusCodes.user_error).json({
+        message: errorMessages.invalid_account_status_tr,
+        actual_message: errorMessages.invalid_account_status
+      });
+
+      return;
+    }
+    filters.status = req.query.status;
+  }
 
 	Client.find(filters)
 		.sort({ _id: 'asc' })

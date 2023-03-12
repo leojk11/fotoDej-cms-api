@@ -34,6 +34,8 @@ exports.errorMessages = {
   user_exist_email_tr: 'errors.clientExistEmail',
   client_already_active: 'Client is already active.',
   client_already_active_tr: 'errors.clientAlreadyActive',
+  invalid_account_status: 'Account status is not valid. [ACTIVE, PENDING]',
+  invalid_account_status_tr: 'errors.invalidAccountStatus',
 
   album_not_exist_tr: 'errors.albumNotExist',
   select_images: 'Please selected images.',
@@ -69,6 +71,9 @@ exports.errorMessages = {
   missing_schedule_or_location: 'You are missing schedule or location id.',
   missing_schedule_or_location_tr: 'errors.missingScheduleOrLocationId',
   location_not_exist_tr: 'errors.locationNotExist',
+
+  invalid_log_action: 'Log action has been invalid. [LOGIN, LOGOUT, ACTIVATE_ACCOUNT, SELECTED_IMAGES, UPDATED_PROFILE]',
+  invalid_log_action_tr: 'errors.invalidLogAction',
 
   required_field: (field) => `[Field: ${ field }] is mandatory.`,
   required_field_tr: {

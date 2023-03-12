@@ -5,8 +5,8 @@ const { verifyToken } = require('../middlewares/common');
 const requests = require('../controllers/request');
 
 router.get('/', verifyToken, requests.getAll);
+router.get('/pending', verifyToken, requests.getPending);
 router.get('/:id', verifyToken, requests.getSingle);
-// router.get('/pending', verifyToken)
 
 router.post('/', requests.addNew);
 

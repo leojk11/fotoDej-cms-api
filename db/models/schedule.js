@@ -16,6 +16,9 @@ const scheduleSchema = new Schema({
   time: {
     type: String,
   },
+  timestamp: {
+    type: String
+  },
 
   location_1: {
     type: String

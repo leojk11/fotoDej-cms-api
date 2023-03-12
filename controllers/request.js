@@ -90,6 +90,53 @@ exports.getAll = (req, res) => {
     })
 }
 
+exports.getPending = (req, res) => {
+  let skip = 0;
+  if(parseInt(req.query.page) === 1) {
+    skip = 0;
+  } else {
+    skip = req.query.take;
+  }
+
+  Request.find({ status: RequestStatus.PENDING })
+    .sort({ _id: 'desc' })
+    .skip(skip)
+    .limit(parseInt(req.query.take))
+    .then(requests => {
+      Request.find({ status: RequestStatus.PENDING })
+        .count()
+        .then(countRes => {
+            const requestsToSend = [];
+
+            for(const request of requests) {
+              requestsToSend.push(generateRequest(request));
+            }
+
+            res.status(statusCodes.success).json({
+              page: parseInt(req.query.page),
+              total: countRes,
+              list: requestsToSend
+            });
+        })
+        .catch(error => {
+          console.log(error);
+          res.status(statusCodes.server_error).json({
+            message: errorMessages.internal_tr,
+            actual_message: errorMessages.internal,
+            error
+          });
+        })
+    })
+    .catch(error => {
+      console.log(error);
+      res.status(statusCodes.server_error).json({
+        message: errorMessages.internal_tr,
+        actual_message: errorMessages.internal,
+        error
+      });
+    })
+}
+
 exports.getSingle = (req, res) => {
   const _id = req.params.id;
 
