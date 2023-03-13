@@ -50,13 +50,13 @@ exports.getAll = (req, res) => {
 	if (req.query.phone_number) {
 		filters.phone_number = { $regex: req.query.phone_number, $options: 'i' };
 	}
-	if (req.params.username) {
+	if (req.query.username) {
 		filters.username = { $regex: req.query.username, $options: 'i' };
 	}
-	if (req.params.email) {
+	if (req.query.email) {
 		filters.email = { $regex: req.query.email, $options: 'i' };
 	}
-  if (req.params.status) {
+  if (req.query.status) {
     if(req.query.status !== AccountStatus.ACTIVE && req.query.status !== AccountStatus.SUSPENDED) {
       res.status(statusCodes.user_error).json({
         message: errorMessages.invalid_account_status_tr,
@@ -65,7 +65,7 @@ exports.getAll = (req, res) => {
 
       return;
     }
-    filters.status = req.query.status;
+    filters.account_status = req.query.status;
   }
 
 	Client.find(filters)
