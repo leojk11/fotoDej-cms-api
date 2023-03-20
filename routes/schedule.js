@@ -9,6 +9,7 @@ router.get('/', verifyToken, schedules.getAll);
 router.get('/:id', verifyToken, schedules.getSingle);
 
 router.get('/for/user', verifyToken, schedules.getForUser);
+router.get('/for/user/upcoming', verifyToken, schedules.getForUserUpcoming);
 
 router.post('/', verifyToken, schedules.addNew);
 

@@ -87,15 +87,44 @@ exports.getSingle = (req, res) => {
     }
 }
 
-exports.getUpcoming = (req, res) => {
+exports.getForUserUpcoming = (req, res) => {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    if (req.query.limit) {
+        const filters = { user_id: loggedInUser.id };
+
+        Schedule.find(filters)
+            .limit(req.query.limit)
+            .then(schedules => {
+                const schedulesToSend = [];
     
+                for(const schedule of schedules) {
+                    schedulesToSend.push(generateSchedule(schedule));
+                }
+    
+                res.status(statusCodes.success).send(schedulesToSend);
+            })
+            .catch(error => {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
+                });
+            })
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.limit_required_tr,
+            actual_message: errorMessages.limit_required
+        });
+    }
 }
 
 exports.getForUser = (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
 
-    const filters = {};
+    const filters = { user_id: loggedInUser.id };
 
     if(!req.query.from || !req.query.to) {
         res.status(statusCodes.user_error).json({
@@ -117,9 +146,7 @@ exports.getForUser = (req, res) => {
                 const schedulesToSend = [];
 
                 for(const schedule of schedules) {
-                    // if(schedule.user_id === req.params.id) {
-                        schedulesToSend.push(generateSchedule(schedule));
-                    // }
+                    schedulesToSend.push(generateSchedule(schedule));
                 }
 
                 res.status(statusCodes.success).send(schedulesToSend);
@@ -178,8 +205,6 @@ exports.addNew = (req, res) => {
                 });
             })
     }
-
-    // res.status(200).send('ok');
 }
 
 exports.edit = (req, res) => {

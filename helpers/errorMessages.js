@@ -71,6 +71,8 @@ exports.errorMessages = {
   missing_schedule_or_location: 'You are missing schedule or location id.',
   missing_schedule_or_location_tr: 'errors.missingScheduleOrLocationId',
   location_not_exist_tr: 'errors.locationNotExist',
+  limit_required_tr: 'errors.limitRequired',
+  limit_required: 'You need to provide the amount of how much elements you want to receive.',
 
   invalid_log_action: 'Log action has been invalid. [LOGIN, LOGOUT, ACTIVATE_ACCOUNT, SELECTED_IMAGES, UPDATED_PROFILE]',
   invalid_log_action_tr: 'errors.invalidLogAction',
