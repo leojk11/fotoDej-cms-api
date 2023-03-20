@@ -32,6 +32,18 @@ exports.getAll = (req, res) => {
     filters.date = req.query.date;
   }
 
+  if (req.query.status) {
+    if(req.query.status !== InviteStatus.SUCCESSFULL && req.query.status !== InviteStatus.FAILED) {
+      res.status(statusCodes.user_error).json({
+        message: errorMessages.invalid_invite_status_tr,
+        actual_message: errorMessages.invalid_invite_status
+      });
+
+      return;
+    }
+    filters.status = req.query.status;
+  }
+
   Invite.find(filters)
     .sort({ _id: 'desc' })
     .skip(skip)

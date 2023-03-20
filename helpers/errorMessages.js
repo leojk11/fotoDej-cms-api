@@ -59,6 +59,9 @@ exports.errorMessages = {
   upload_error_tr: 'errors.uploadError',
 
   invite_not_exist_tr: 'errors.inviteNotExist',
+  invalid_invite_status: 'You have set invalid request status. [SUCCESSFULL, FAILED]',
+  invalid_invite_status_tr: 'errors.ivalidInviteStatus',
+
 
   dates_need_provided: 'Dates from ad to need to be provided.',
   dates_need_provided_tr: 'errors.datesNeedToBeProvided',
