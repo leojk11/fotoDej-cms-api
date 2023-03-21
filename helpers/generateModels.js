@@ -299,7 +299,10 @@ exports.generateNotification = (notification) => {
     event_info: notification.event_info,
     message: notification.message,
     date: notification.date,
-    time: notification.time
+    time: notification.time,
+
+    time_passed: notification.time_passed,
+    time_passed_type: notification.time_passed_type
   };
 
   return newNotification;

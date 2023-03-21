@@ -4,6 +4,8 @@ const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
 const { generateNotification } = require('../helpers/generateModels');
 
+const { TimePassedType } = require('../enums/timePassedType');
+
 exports.getAll = (req, res) => {
 
   let skip = 0;
@@ -26,6 +28,28 @@ exports.getAll = (req, res) => {
           const notificataionsToSend = [];
 
           for(const notification of notifications) {
+            const addedTime = new Date(notification.timestamp);
+            const now = new Date();
+
+            const hours = Math.abs(addedTime - now) / 3.6e6;
+
+            if (hours < 1) {
+              const milisecs = (now - addedTime);
+              const minutes = Math.round(((milisecs % 86400000) % 3600000) / 60000);
+
+              notification['time_passed_type'] = TimePassedType.MINUTES;
+              notification['time_passed'] = minutes;
+            } else if (hours <= 24) {
+              notification['time_passed_type'] = TimePassedType.HOURS;
+              notification['time_passed'] = hours;
+            } else {
+              const difference = now.getTime() - addedTime.getTime();
+              const totalDays = Math.ceil(difference / (1000 * 3600 * 24));
+
+              notification['time_passed_type'] = TimePassedType.DAYS;
+              notification['time_passed'] = totalDays;
+            }
+
             notificataionsToSend.push(generateNotification(notification));
           }
 
