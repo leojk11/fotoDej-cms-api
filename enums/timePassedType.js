@@ -1,6 +1,6 @@
 exports.TimePassedType = {
-    SECONDS: 'SECONDS',
-    MINUTES: 'MINUTES',
-    HOURS: 'HOURS',
-    DAYS: 'DAYS'
+    SECONDS: 'types.seconds',
+    MINUTES: 'types.minutes',
+    HOURS: 'types.hours',
+    DAYS: 'types.days'
 };

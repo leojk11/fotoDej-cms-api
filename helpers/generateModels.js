@@ -300,6 +300,7 @@ exports.generateNotification = (notification) => {
     message: notification.message,
     date: notification.date,
     time: notification.time,
+    type: notification.type,
 
     time_passed: notification.time_passed,
     time_passed_type: notification.time_passed_type
