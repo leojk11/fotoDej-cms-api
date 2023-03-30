@@ -303,7 +303,9 @@ exports.generateNotification = (notification) => {
     type: notification.type,
 
     time_passed: notification.time_passed,
-    time_passed_type: notification.time_passed_type
+    time_passed_type: notification.time_passed_type,
+
+    read: notification.read
   };
 
   return newNotification;

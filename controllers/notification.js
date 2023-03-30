@@ -5,6 +5,8 @@ const { errorMessages } = require('../helpers/errorMessages');
 const { generateNotification } = require('../helpers/generateModels');
 
 const { TimePassedType } = require('../enums/timePassedType');
+const { ErrorKind } = require('../enums/errorKind');
+const { successMessages } = require('../helpers/successMessages');
 
 exports.getAll = (req, res) => {
 
@@ -74,4 +76,55 @@ exports.getAll = (req, res) => {
         error
       });
     })
+}
+
+exports.markAsRead = (req, res) => {
+  const _id = req.params.id;
+
+  if (_id) {
+    Notification.updateOne({ _id }, { read: true })
+      .then(() => {
+        Notification.find({ _id })
+          .then(notifications => {
+            res.status(statusCodes.success).json({
+              message: successMessages.notification_marked_read_tr,
+              actual_message: successMessages.notification_marked_read,
+              notification: generateNotification(notifications[0])
+            });
+          })
+          .catch(error => {
+            if(error.kind === ErrorKind.ID) {
+              res.status(statusCodes.user_error).json({
+                message: errorMessages.invalid_id_tr,
+                actual_message: errorMessages.invalid_id(id)
+              });
+            } else {
+              res.status(statusCodes.server_error).json({
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
+              });
+            }
+          })
+      })
+      .catch(error => {
+        if(error.kind === ErrorKind.ID) {
+          res.status(statusCodes.user_error).json({
+            message: errorMessages.invalid_id_tr,
+            actual_message: errorMessages.invalid_id(id)
+          });
+        } else {
+          res.status(statusCodes.server_error).json({
+            message: errorMessages.internal_tr,
+            actual_message: errorMessages.internal,
+            error
+          });
+        }
+      })
+  } else {
+    res.status(statusCodes.user_error).json({
+      message: errorMessages.id_missing_tr,
+      actual_message: errorMessages.id_missing
+    });
+  }
 }

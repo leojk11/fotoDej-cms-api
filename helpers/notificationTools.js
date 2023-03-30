@@ -3,11 +3,9 @@ const Notification = require('../db/models/notification');
 const { generateDate, generateTime } = require('./timeDate');
 
 exports.insertNotificaton = (type, client, timestamp, event) => {
-  console.log('type', type);
-  console.log('client', client);
-  console.log('timestamp', timestamp);
   const newNot = {
     type: type,
+    read: false,
 
     client: client ? client : null,
     client_id: client ? client._id : null,

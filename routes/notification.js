@@ -4,6 +4,8 @@ const { verifyToken } = require('../middlewares/common');
 
 const notifications = require('../controllers/notification');
 
-router.get('/',  notifications.getAll);
-// verifyToken,
+router.get('/', verifyToken, notifications.getAll);
+
+router.patch('/read/:id', verifyToken, notifications.markAsRead);
+
 module.exports = router;

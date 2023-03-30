@@ -7,6 +7,11 @@ const notificationSchema = new Schema({
     required: true
   },
 
+  read: {
+    type: Boolean,
+    required: true
+  },
+
   // type: ACCEPTED_INVITATION
   client: {
     type: Object
