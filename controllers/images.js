@@ -3,6 +3,7 @@ const fs = require('fs');
 const Image = require('../db/models/image');
 const SelectedImages = require('../db/models/selectedImages');
 const ClientLog = require('../db/models/clientLog');
+const Album = require('../db/models/album');
 
 const { errorMessages } = require('../helpers/errorMessages');
 const { statusCodes } = require('../helpers/statusCodes');
@@ -67,6 +68,80 @@ exports.getImagesForAlbum = (req, res) => {
                 });
             })
     } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
+        });
+    }
+}
+
+exports.uploadImagesForAlbum = (req, res) => {
+    const imagesPath = './images/';
+    const id = req.params.id;
+
+    if (id) {
+        const dir = `${ imagesPath }/${ id }`;
+
+        Album.find({ _id: id })
+            .then(albums => {
+                if (albums.length > 0) {
+                    if (!fs.existsSync(dir)) {
+                        fs.mkdirSync(dir, { recursive: true });
+                    }
+
+                    const file = req.files.images;
+                    const imageData = {
+                        name: file.name,
+                        album_id: id,
+                        disabled: false
+                    };
+
+                    Image.insertMany(imageData)
+                        .then(() => {
+                            try {
+                                file.mv(`${ dir }/` + file.name).then();
+
+                                res.status(statusCodes.success).json({ 
+                                    message: successMessages.upload_success_tr,
+                                    actual_message: successMessages.upload_success
+                                });
+                            }
+                            catch (error) {
+                                console.log('error in trycatch');
+                                return res.send({
+                                    success: false,
+                                    message: errorMessages.upload_error_tr,
+                                    actual_message: errorMessages.upload_error,
+                                    error
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.log('error in insert images');
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal_tr,
+                                actual_message: errorMessages.internal,
+                                error
+                            });
+                        })
+                } else {
+                    console.log('error in if album exists');
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.album_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Album', id)
+                    });
+                }
+            })
+            .catch(error => {
+                console.log('error in albums find');
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
+                });
+            })
+    } else {
+        console.log('error in if id');
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
@@ -145,7 +220,6 @@ exports.getSelectedImagesForAlbum = (req, res) => {
             actual_message: errorMessages.id_missing
         });
     }
-
 }
 
 exports.selectImages = (req, res) => {
@@ -359,10 +433,11 @@ exports.disableImages = (req, res) => {
 }
 
 exports.deleteMultiple = (req, res) => {
-    const path = './images/';
 
     const albumId = req.params.id;
     const images = req.body.images;
+
+    const path = `./images/${ albumId }/`;
 
     if (albumId) {
         if (images) {
@@ -381,6 +456,20 @@ exports.deleteMultiple = (req, res) => {
                                 message: successMessages.image_deleted_tr,
                                 actual_message: successMessages.image_deleted
                             });
+
+                            Image.find({ album_id: albumId })
+                                .then(imagesAfterDelete => {
+                                    if (imagesAfterDelete.length === 0) {
+                                        fs.rmSync(path, { recursive: true, force: true });
+                                    }
+                                })
+                                .catch(error => {
+                                    res.status(statusCodes.server_error).json({
+                                        message: errorMessages.internal_tr,
+                                        actual_message: errorMessages.internal,
+                                        error
+                                    });
+                                })
                         }
                     })
                     .catch(error => {
@@ -411,50 +500,4 @@ exports.deleteMultiple = (req, res) => {
               actual_message: errorMessages.id_missing
           });
     }
-}
-
-exports.delete = (req, res) => {
-  const path = './images/';
-
-  const albumId = req.params.id;
-  const image = req.params.image;
-
-  if (albumId) {
-      if (image) {
-        try {
-            Image.deleteOne({ name: image, album_id: albumId })
-                .then(() => {
-                    fs.unlinkSync(path + image);
-
-                    res.status(statusCodes.success).json({
-                        message: successMessages.image_deleted_tr,
-                        actual_message: successMessages.image_deleted
-                    });
-                })
-                .catch(error => {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                })
-        } catch (error) {
-            res.status(statusCodes.server_error).json({
-                message: errorMessages.internal_tr,
-                actual_message: errorMessages.internal,
-                error
-            });
-        }
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.enter_image_name_tr,
-            actual_message: errorMessages.please_enter('image name')
-        });
-    }
-  } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing_tr,
-            actual_message: errorMessages.id_missing
-        });
-  }
 }

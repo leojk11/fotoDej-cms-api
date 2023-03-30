@@ -4,7 +4,7 @@ const { statusCodes } = require('../helpers/statusCodes');
 
 exports.get = (req, res) => {
     if(req.params.video) {
-        console.log('video', req.params.video);
+        // console.log('video', req.params.video);
         const video = req.params.video;
         res.status(statusCodes.success)
             .sendFile('./videos/' + video, { root: '.' }, (error) => {
