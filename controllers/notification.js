@@ -136,3 +136,20 @@ exports.markAsRead = (req, res) => {
     });
   }
 }
+
+exports.markAllAsRead = (req, res) => {
+  Notification.updateMany({}, { read: true })
+    .then(() => {
+      res.status(statusCodes.success).json({
+        message: successMessages.all_notifications_marked_read_tr,
+        actual_message: successMessages.all_notifications_marked_read
+      });
+    })
+    .catch(error => {
+      res.status(statusCodes.server_error).json({
+        message: errorMessages.internal_tr,
+        actual_message: errorMessages.internal,
+        error
+      });
+    })
+}

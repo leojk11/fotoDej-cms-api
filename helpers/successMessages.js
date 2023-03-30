@@ -72,5 +72,7 @@ exports.successMessages = {
   request_contacted_tr: 'success.requestContacted',
 
   notification_marked_read: 'Notification has been marked as read.',
-  notification_marked_read_tr: 'success.notificationMarkedRead'
+  notification_marked_read_tr: 'success.notificationMarkedRead',
+  all_notifications_marked_read: 'All notifications have been marked as read.',
+  all_notifications_marked_read_tr: 'success.allNotificationsMarkedRead'
 };

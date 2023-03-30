@@ -6,6 +6,7 @@ const notifications = require('../controllers/notification');
 
 router.get('/', verifyToken, notifications.getAll);
 
+router.patch('/read/all', verifyToken, notifications.markAllAsRead);
 router.patch('/read/:id', verifyToken, notifications.markAsRead);
 
 module.exports = router;
