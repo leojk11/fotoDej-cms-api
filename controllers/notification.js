@@ -28,6 +28,7 @@ exports.getAll = (req, res) => {
         .count()
         .then(countRes => {
           const notificataionsToSend = [];
+          let notReadNotifications = 0;
 
           for(const notification of notifications) {
             const addedTime = new Date(notification.timestamp);
@@ -52,16 +53,22 @@ exports.getAll = (req, res) => {
               notification['time_passed'] = totalDays;
             }
 
+            if (!notification.read) {
+              notReadNotifications++;
+            }
+
             notificataionsToSend.push(generateNotification(notification));
           }
 
           res.status(statusCodes.success).json({
             page: parseInt(req.query.page),
             total: countRes,
+            not_read: notReadNotifications,
             list: notificataionsToSend
           });
         })
         .catch(error => {
+          console.log(error);
           res.status(statusCodes.server_error).json({
             message: errorMessages.internal_tr,
             actual_message: errorMessages.internal,
@@ -70,6 +77,7 @@ exports.getAll = (req, res) => {
         })
     })
     .catch(error => {
+      console.log(error);
       res.status(statusCodes.server_error).json({
         message: errorMessages.internal_tr,
         actual_message: errorMessages.internal,
