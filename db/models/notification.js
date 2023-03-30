@@ -24,6 +24,10 @@ const notificationSchema = new Schema({
     type: Object
   },
 
+  album_id: {
+    type: String
+  },
+
   message: { // for all types (generic messages)
     type: String
   },

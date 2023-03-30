@@ -203,7 +203,7 @@ exports.addNew = (req, res) => {
   } else {
     Request.insertMany(data)
       .then(async () => {
-        await insertNotificaton(NotificationType.REQUEST_SENT, null, new Date(), null);
+        await insertNotificaton(NotificationType.REQUEST_SENT, null, new Date(), null, null);
 
         res.status(statusCodes.success).json({
           message: successMessages.request_created_tr,

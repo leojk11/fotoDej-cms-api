@@ -2,7 +2,7 @@ const Notification = require('../db/models/notification');
 
 const { generateDate, generateTime } = require('./timeDate');
 
-exports.insertNotificaton = (type, client, timestamp, event) => {
+exports.insertNotificaton = (type, client, timestamp, event, albumId) => {
   const newNot = {
     type: type,
     read: false,
@@ -11,6 +11,8 @@ exports.insertNotificaton = (type, client, timestamp, event) => {
     client_id: client ? client._id : null,
 
     event_info: event ? event : null,
+
+    album_id: albumId ? albumId : null,
 
     message: this.notificationMessages[type],
 

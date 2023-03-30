@@ -301,6 +301,7 @@ exports.generateNotification = (notification) => {
     date: notification.date,
     time: notification.time,
     type: notification.type,
+    album_id: notification.album_id,
 
     time_passed: notification.time_passed,
     time_passed_type: notification.time_passed_type,

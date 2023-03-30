@@ -595,7 +595,7 @@ exports.resetFirstPassword = (req, res) => {
                       await insertNotificaton(
                         NotificationType.ACCEPTED_INVITATION, 
                         generateCleanModel(clients[0]), 
-                        new Date(), null
+                        new Date(), null, null
                       );
 
                       res.status(statusCodes.success).json({

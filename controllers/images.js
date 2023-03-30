@@ -182,7 +182,8 @@ exports.selectImages = (req, res) => {
                                                 NotificationType.SELECTED_IMAGES,
                                                 loggedInUser,
                                                 new Date(),
-                                                null
+                                                null,
+                                                albumId
                                             );
                                             
                                             res.status(statusCodes.success).json({
