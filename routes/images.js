@@ -6,6 +6,7 @@ const { verifyToken } = require('../middlewares/common');
 const images = require('../controllers/images');
 
 router.get('/:img', images.getImage);
+router.get('/album_image/:id/:img', images.getAlbumImage);
 router.get('/album/:id', images.getImagesForAlbum);
 router.get('/album/:id/selected', images.getSelectedImagesForAlbum);
 

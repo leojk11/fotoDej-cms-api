@@ -37,6 +37,29 @@ exports.getImage = (req, res) => {
     }
 }
 
+exports.getAlbumImage = (req, res) => {
+    const albumId = req.params.id;
+    if(req.params.img) {
+        const image = req.params.img;
+        const path = `./images/${ albumId }/${ image }`;
+        
+        res.status(statusCodes.success)
+            .sendFile(path, { root: '.' }, (error) => {
+                if(error) {
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.image_not_exist_tr,
+                        actual_message: errorMessages.image_not_exist
+                    });
+                }
+            });
+    } else {
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.provide_image_name_tr,
+            actual_message: errorMessages.provide_image_name
+        });
+    }
+}
+
 exports.getImagesForAlbum = (req, res) => {
     const imageSearch = req.query.image;
     const filters = {};
