@@ -24,8 +24,6 @@ exports.getAll = (req, res) => {
             }
         })
             .then(schedules => {
-                const schedulesToSend = [];
-
                 const groups = schedules.reduce((groups, schedule) => {
                     if (!groups[schedule.date]) {
                         groups[schedule.date] = [];
@@ -40,10 +38,6 @@ exports.getAll = (req, res) => {
                         schedules: groups[date]
                     };
                 });
-
-                for(const schedule of schedules) {
-                    schedulesToSend.push(generateSchedule(schedule));
-                }
 
                 res.status(statusCodes.success).send(groupArrays);
             })
