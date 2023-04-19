@@ -13,7 +13,7 @@ const { AdminRole } = require('../enums/adminRole');
 
 const { parseJwt } = require('../middlewares/common');
 
-exports.getAll = (req, res) => {
+exports.getAll = async (req, res) => {
 
     const token = req.headers.authorization;
 	const loggedInUser = parseJwt(token);
@@ -40,44 +40,26 @@ exports.getAll = (req, res) => {
         filters.title = { $regex: req.query.title, $options: 'i' };
     }
 
-    Album.find(filters)
-        .sort({ _id: 'desc' })
-        .skip(skip)
-        .limit(parseInt(req.query.take))
-        .then(albums => {
-            Album.find(filters)
-                .count()
-                .then(countRes => {
-                    const albumsToSend = [];
+    try {
+        const albums = await Album.find(filters).sort({ _id: 'desc' })
+            .skip(skip).limit(parseInt(req.query.take));
+        const albumsCount = await Album.find().count();
 
-                    for(const album of albums) {
-                        albumsToSend.push(generateAlbum(album));
-                    }
-
-                    res.status(statusCodes.success).json({
-                        page: parseInt(req.query.page),
-                        total: countRes,
-                        list: albumsToSend
-                    });
-                })
-                .catch(error => {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                })
-        })
-        .catch(error => {
-            res.status(statusCodes.server_error).json({
-                message: errorMessages.internal_tr,
-                actual_message: errorMessages.internal,
-                error
-            });
-        })
+        res.status(statusCodes.success).json({
+            page: parseInt(req.query.page),
+            total: albumsCount,
+            list: albums.map(album => generateAlbum(album))
+        });
+    } catch (error) {
+        res.status(statusCodes.server_error).json({
+            message: errorMessages.internal_tr,
+            actual_message: errorMessages.internal,
+            error
+        });
+    }
 }
 
-exports.getSingle = (req, res) => {
+exports.getSingle = async (req, res) => {
 
     const token = req.headers.authorization;
 	const loggedInUser = parseJwt(token);
@@ -92,31 +74,30 @@ exports.getSingle = (req, res) => {
 		    filters.active = true;
 	    }
         
-        Album.find(filters)
-            .then(albums => {
-                if(albums.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.album_not_exist_tr,
-                        actual_message: errorMessages.not_exist('Album', id)
-                    });
-                } else {
-                    res.status(statusCodes.success).send(generateAlbum(albums[0]));
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id_tr,
-                        actual_message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
+        try {
+            const albums = await Album.find(filters);
+            if(albums.length === 0) {
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.album_not_exist_tr,
+                    actual_message: errorMessages.not_exist('Album', id)
+                });
+            } else {
+                res.status(statusCodes.success).send(generateAlbum(albums[0]));
+            }
+        } catch (error) {
+            if(error.kind === ErrorKind.ID) {
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.invalid_id_tr,
+                    actual_message: errorMessages.invalid_id(id)
+                });
+            } else {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
+                });
+            }
+        }
     } else {
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
@@ -125,8 +106,7 @@ exports.getSingle = (req, res) => {
     }
 }
 
-exports.getAllSoftDeleted = (req, res) => {
-
+exports.getAllSoftDeleted = async (req, res) => {
     let skip = 0;
     if(parseInt(req.query.page) === 1) {
         skip = 0;
@@ -134,46 +114,26 @@ exports.getAllSoftDeleted = (req, res) => {
         skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
     }
 
-    const filters = { active: false };
+    try {
+        const albums = await Album.find({ active: false }).sort({ _id: 'asc' })
+            .skip(skip).limit(parseInt(req.query.take));
+        const albumsCount = await Album.find({ active: true }).count();
 
-    Album.find({ ...filters })
-        .sort({ _id: 'asc' })
-        .skip(skip)
-        .limit(parseInt(req.query.take))
-        .then(albums => {
-            Album.find({ ...filters })
-                .count()
-                .then(countRes => {
-                    const albumsToSend = [];
-
-                    for(const album of albums) {
-                        albumsToSend.push(generateAlbum(album));
-                    }
-
-                    res.status(statusCodes.success).json({
-                        page: parseInt(req.query.page),
-                        total: countRes,
-                        list: albumsToSend
-                    });
-                })
-                .catch(error => {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                })
-        })
-        .catch(error => {
-            res.status(statusCodes.server_error).json({
-                message: errorMessages.internal_tr,
-                actual_message: errorMessages.internal,
-                error
-            });
-        })
+        res.status(statusCodes.success).json({
+            page: parseInt(req.query.page),
+            total: albumsCount,
+            list: albums.map(album => generateAlbum(album))
+        });
+    } catch (error) {
+        res.status(statusCodes.server_error).json({
+            message: errorMessages.internal_tr,
+            actual_message: errorMessages.internal,
+            error
+        });
+    }
 }
 
-exports.getAllAssignedTo = (req, res) => {
+exports.getAllAssignedTo = async (req, res) => {
     const userId = req.params.userId;
 
     if(userId) {
@@ -184,47 +144,23 @@ exports.getAllAssignedTo = (req, res) => {
             skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
         }
 
-        Album.find({ 
-            assigned_to_id: userId,
-            active: true
-        })
-            .sort({ _id: 'asc' })
-            .skip(skip)
-            .limit(parseInt(req.query.take))
-            .then(albums => {
-                Album.find({
-                    assigned_to_id: userId,
-                    active: true
-                })
-                    .count()
-                    .then(countRes => {
-                        const albumsToSend = [];
+        try {
+            const albums = await Album.find({ assigned_to_id: userId, active: true }).sort({ _id: 'asc' })
+                .skip(skip).limit(parseInt(req.query.take));
+            const albumsCount = await Album.find({ assigned_to_id: userId, active: true }).count();
 
-                        for(const album of albums) {
-                            albumsToSend.push(generateAlbum(album));
-                        }
-        
-                        res.status(statusCodes.success).json({
-                            page: parseInt(req.query.page),
-                            total: countRes,
-                            list: albumsToSend
-                        });
-                    })
-                    .catch(error => {
-                        res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal_tr,
-                            actual_message: errorMessages.internal,
-                            error
-                        });
-                    });
-            })
-            .catch(error => {
-                res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal_tr,
-                    actual_message: errorMessages.internal,
-                    error
-                });
+            res.status(statusCodes.success).json({
+                page: parseInt(req.query.page),
+                total: albumsCount,
+                list: albums.map(album => generateAlbum(album))
             });
+        } catch (error) {
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
+            });
+        }
     } else {
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
