@@ -17,6 +17,8 @@ const { NotificationType } = require('../enums/notificationType');
 
 const { parseJwt } = require('../middlewares/common');
 
+const sharp = require('sharp');
+
 exports.getImage = (req, res) => {
     if(req.params.img) {
         const image = req.params.img;
@@ -42,16 +44,31 @@ exports.getAlbumImage = (req, res) => {
     if(req.params.img) {
         const image = req.params.img;
         const path = `./images/${ albumId }/${ image }`;
-        
-        res.status(statusCodes.success)
-            .sendFile(path, { root: '.' }, (error) => {
-                if(error) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.image_not_exist_tr,
-                        actual_message: errorMessages.image_not_exist
-                    });
+
+        const splittedImage = image.split('.');
+        const newPath = `./images/${ albumId }/${ splittedImage[0] }_resize.${ splittedImage[1] }`;
+
+        sharp(path)
+            .resize(530,null)
+            .flatten()
+            .toFile(newPath, function(err){
+                if(err){
+                    console.log('error', err);
+                    res.sendStatus(500);
+                    return;
                 }
+                res.sendFile(newPath, { root: '.' });
             });
+        
+        // res.status(statusCodes.success)
+        //     .sendFile(path, { root: '.' }, (error) => {
+        //         if(error) {
+        //             res.status(statusCodes.user_error).json({
+        //                 message: errorMessages.image_not_exist_tr,
+        //                 actual_message: errorMessages.image_not_exist
+        //             });
+        //         }
+        //     });
     } else {
         res.status(statusCodes.user_error).json({
             message: errorMessages.provide_image_name_tr,
