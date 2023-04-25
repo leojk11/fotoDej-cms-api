@@ -17,7 +17,7 @@ const { NotificationType } = require('../enums/notificationType');
 
 const { parseJwt } = require('../middlewares/common');
 
-const sharp = require('sharp');
+const Jimp = require('jimp');
 
 exports.getImage = (req, res) => {
     if(req.params.img) {
@@ -42,33 +42,43 @@ exports.getImage = (req, res) => {
 exports.getAlbumImage = (req, res) => {
     const albumId = req.params.id;
     if(req.params.img) {
-        const image = req.params.img;
-        const path = `./images/${ albumId }/${ image }`;
-
-        const splittedImage = image.split('.');
-        const newPath = `./images/${ albumId }/${ splittedImage[0] }_resize.${ splittedImage[1] }`;
-
-        sharp(path)
-            .resize(530,null)
-            .flatten()
-            .toFile(newPath, function(err){
-                if(err){
-                    console.log('error', err);
-                    res.sendStatus(500);
-                    return;
-                }
-                res.sendFile(newPath, { root: '.' });
+        try {
+            const image = req.params.img;
+            const localPath = `./images/${ albumId }/${ image }`;
+            const splittedImage = image.split('.');
+            const newPath = `./images/${ albumId }/${ splittedImage[0] }_resize.${ splittedImage[1] }`;
+            
+            if (!fs.existsSync(newPath)) {
+                Jimp.read(localPath, (err, test) => {
+                    if (err) throw err;
+                    test.resize(300, 300)
+                        .writeAsync(newPath).then(() => {
+                            res.sendFile(newPath, { root: '.' });
+                        }).catch(error => {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal_tr,
+                                actual_message: errorMessages.internal,
+                                error
+                            });
+                        })
+                });
+            } else {
+                res.sendFile(newPath, { root: '.' }, (error) => {
+                    if (error) {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.image_not_exist_tr,
+                            actual_message: errorMessages.image_not_exist
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
             });
-        
-        // res.status(statusCodes.success)
-        //     .sendFile(path, { root: '.' }, (error) => {
-        //         if(error) {
-        //             res.status(statusCodes.user_error).json({
-        //                 message: errorMessages.image_not_exist_tr,
-        //                 actual_message: errorMessages.image_not_exist
-        //             });
-        //         }
-        //     });
+        }
     } else {
         res.status(statusCodes.user_error).json({
             message: errorMessages.provide_image_name_tr,
