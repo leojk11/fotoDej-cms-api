@@ -200,6 +200,11 @@ exports.uploadImagesForAlbum = (req, res) => {
 }
 
 exports.uploadImagesV2 = (req, res) => {
+  const imagesPath = './images/';
+
+  const albumId = req.params.albumId;
+
+  console.log('albumId', albumId)
   if (!req.files) {
     res.status(statusCodes.user_error).json({
         message: errorMessages.must_select_image_tr,
@@ -214,10 +219,15 @@ exports.uploadImagesV2 = (req, res) => {
         disabled: false
     };
 
+    const dir = `${ imagesPath }/${ albumId }`;
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
     Image.insertMany(imageData)
         .then(() => {
             try {
-                file.mv('./images/' + file.name).then();
+                file.mv(`${ dir }/` + file.name).then();
             }
             catch (error) {
                 return res.send({

@@ -124,41 +124,27 @@ exports.edit = (req, res) => {
 exports.addPromoImages = (req, res) => {
     const images = req.body.images;
 
-    if (images.length > 6) {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.max_images_tr,
-            actual_message: errorMessages.max_images
-        });
-    } else {
-        FeConfiguration.find()
-            .then(conf => {
-                let exImages = JSON.parse(conf[0].promo_images);
+    FeConfiguration.find()
+        .then(conf => {
+            let exImages = JSON.parse(conf[0].promo_images);
 
-                if (exImages.length > 0) {
-                    exImages.splice(exImages.length - images.length, images.length);
-                } else {
-                    exImages = images;
-                }
+            if (exImages.length > 0) {
+                exImages.splice(exImages.length - images.length, images.length);
+            } else {
+                exImages = images;
+            }
 
-                const toUpdate = { promo_images: JSON.stringify(exImages) };
+            const toUpdate = { promo_images: JSON.stringify(exImages) };
 
-                FeConfiguration.updateOne(
-                    { _id: conf[0]._id },
-                    { ...toUpdate }
-                )
-                .then(() => {
-                    res.status(statusCodes.success).json({
-                        message: successMessages.promo_images_updated_tr,
-                        actual_message: successMessages.promo_images_updated
-                    });
-                })
-                .catch(error => {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                })
+            FeConfiguration.updateOne(
+                { _id: conf[0]._id },
+                { ...toUpdate }
+            )
+            .then(() => {
+                res.status(statusCodes.success).json({
+                    message: successMessages.promo_images_updated_tr,
+                    actual_message: successMessages.promo_images_updated
+                });
             })
             .catch(error => {
                 res.status(statusCodes.server_error).json({
@@ -167,7 +153,14 @@ exports.addPromoImages = (req, res) => {
                     error
                 });
             })
-    }
+        })
+        .catch(error => {
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
+            });
+        })
 }
 
 exports.deletePromoImage = (req, res) => {
