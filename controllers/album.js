@@ -17,8 +17,6 @@ const { parseJwt } = require('../middlewares/common');
 
 exports.getAll = async (req, res) => {
 
-    console.log('req', req.method);
-
     const token = req.headers.authorization;
 	const loggedInUser = parseJwt(token);
 

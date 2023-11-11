@@ -4,20 +4,27 @@ const { generateDate, generateTime } = require('./timeDate');
 const { statusCodes } = require('./statusCodes');
 
 exports.generateSuccessLogger = (user, request) => {
-  return {
+  const loggerData = {
     log_type: LogType.SUCCESS,
     log_status: statusCodes.success,
-    user,
     url: request.url,
     method: request.method,
 
     date: generateDate(),
     time: generateTime()
   };
+
+  if (user) {
+    loggerData['user'] = user;
+  } else {
+    loggerData['user'] = 'NO_USER';
+  }
+
+  return loggerData;
 }
 
 exports.generateErrorLogger = (user, request, error) => {
-  return {
+  const loggerData = {
     log_type: LogType.ERROR,
     log_status: statusCodes.server_error,
     user, error,     
@@ -27,4 +34,12 @@ exports.generateErrorLogger = (user, request, error) => {
     date: generateDate(),
     time: generateTime()
   };
+
+  if (user) {
+    loggerData['user'] = user;
+  } else {
+    loggerData['user'] = 'NO_USER';
+  }
+
+  return loggerData;
 }
