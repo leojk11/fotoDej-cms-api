@@ -7,7 +7,7 @@ exports.generateSuccessLogger = (user, request) => {
   const loggerData = {
     log_type: LogType.SUCCESS,
     log_status: statusCodes.success,
-    url: request.url,
+    url: request.originalUrl,
     method: request.method,
 
     date: generateDate(),
@@ -28,7 +28,7 @@ exports.generateErrorLogger = (user, request, error) => {
     log_type: LogType.ERROR,
     log_status: statusCodes.server_error,
     user, error,     
-    url: request.url,
+    url: request.originalUrl,
     method: request.method,
 
     date: generateDate(),
