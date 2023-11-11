@@ -20,6 +20,7 @@ const { parseJwt } = require('../middlewares/common');
 const Jimp = require('jimp');
 
 exports.getImage = (req, res) => {
+    // console.log('get image clled');
     if(req.params.img) {
         const image = req.params.img;
         res.status(statusCodes.success)
@@ -40,6 +41,7 @@ exports.getImage = (req, res) => {
 }
 
 exports.getAlbumImage = (req, res) => {
+    console.log('get album image called');
     const albumId = req.params.id;
     if(req.params.img) {
         try {

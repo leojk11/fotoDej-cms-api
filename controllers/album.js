@@ -1,15 +1,18 @@
 const Album = require('../db/models/album');
 const Client = require('../db/models/client');
 const Image = require('../db/models/image');
+const Logger = require('../db/models/logger');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
 const { successMessages } = require('../helpers/successMessages');
 const { generateAlbum, generateCleanModel } = require('../helpers/generateModels');
 const { generateDate, generateTime } = require('../helpers/timeDate');
+const { generateSuccessLogger, generateErrorLogger } = require('../helpers/logger');
 
 const { ErrorKind } = require('../enums/errorKind');
 const { AdminRole } = require('../enums/adminRole');
+const { LogType } = require('../enums/logType');
 
 const { parseJwt } = require('../middlewares/common');
 
@@ -45,12 +48,16 @@ exports.getAll = async (req, res) => {
             .skip(skip).limit(parseInt(req.query.take));
         const albumsCount = await Album.find().count();
 
+        await Logger.insertMany(generateSuccessLogger(loggedInUser, req.originalUrl));
+
         res.status(statusCodes.success).json({
             page: parseInt(req.query.page),
             total: albumsCount,
             list: albums.map(album => generateAlbum(album))
         });
     } catch (error) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req.originalUrl, error));
+
         res.status(statusCodes.server_error).json({
             message: errorMessages.internal_tr,
             actual_message: errorMessages.internal,
@@ -77,11 +84,14 @@ exports.getSingle = async (req, res) => {
         try {
             const albums = await Album.find(filters);
             if(albums.length === 0) {
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req.originalUrl, errorMessages.not_exist('Album', id)));
+
                 res.status(statusCodes.user_error).json({
                     message: errorMessages.album_not_exist_tr,
                     actual_message: errorMessages.not_exist('Album', id)
                 });
             } else {
+                await Logger.insertMany(generateSuccessLogger(loggedInUser, req.originalUrl));
                 res.status(statusCodes.success).send(generateAlbum(albums[0]));
             }
         } catch (error) {
@@ -169,7 +179,7 @@ exports.getAllAssignedTo = async (req, res) => {
     }
 }
 
-exports.getAllAssignedBy = (req, res) => {
+exports.getAllAssignedBy = async (req, res) => {
     const userId = req.params.userId;
 
     if(userId) {
@@ -180,47 +190,29 @@ exports.getAllAssignedBy = (req, res) => {
             skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
         }
 
-        Album.find({ 
-            assigned_by_id: userId,
-            active: true
-        })
-            .sort({ _id: 'asc' })
-            .skip(skip)
-            .limit(parseInt(req.query.take))
-            .then(albums => {
-                Album.find({
-                    assigned_by_id: userId,
-                    active: true
-                })
-                    .count()
-                    .then(countRes => {
-                        const albumsToSend = [];
+        try {
+            const albums = await Album.find({ 
+                assigned_by_id: userId,
+                active: true
+            }).sort({ _id: 'asc' })
+            .skip(skip).limit(parseInt(req.query.take));
+            const albumsCount = await Album.find({
+                assigned_by_id: userId,
+                active: true
+            }).count();
 
-                        for(const album of albums) {
-                            albumsToSend.push(generateAlbum(album));
-                        }
-        
-                        res.status(statusCodes.success).json({
-                            page: parseInt(req.query.page),
-                            total: countRes,
-                            list: albumsToSend
-                        });
-                    })
-                    .catch(error => {
-                        res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal_tr,
-                            actual_message: errorMessages.internal,
-                            error
-                        });
-                    });
-            })
-            .catch(error => {
-                res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal_tr,
-                    actual_message: errorMessages.internal,
-                    error
-                });
+            res.status(statusCodes.success).json({
+                page: parseInt(req.query.page),
+                total: albumsCount,
+                list: albums.map(album => generateAlbum(album))
             });
+        } catch (error) {
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
+            });
+        }
     } else {
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
@@ -229,7 +221,7 @@ exports.getAllAssignedBy = (req, res) => {
     }
 }
 
-exports.getAllCreatedBy = (req, res) => {
+exports.getAllCreatedBy = async (req, res) => {
     const userId = req.params.userId;
 
     if(userId) {
@@ -240,47 +232,29 @@ exports.getAllCreatedBy = (req, res) => {
             skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
         }
 
-        Album.find({ 
-            crated_by_id: userId,
-            active: true
-        })
-            .sort({ _id: 'asc' })
-            .skip(skip)
-            .limit(parseInt(req.query.take))
-            .then(albums => {
-                Album.find({
-                    crated_by_id: userId,
-                    active: true
-                })
-                    .count()
-                    .then(countRes => {
-                        const albumsToSend = [];
+        try {
+            const albums = await Album.find({ 
+                crated_by_id: userId,
+                active: true
+            }).sort({ _id: 'asc' })
+            .skip(skip).limit(parseInt(req.query.take));
+            const albumsCount = await Album.find({
+                crated_by_id: userId,
+                active: true
+            }).count();
 
-                        for(const album of albums) {
-                            albumsToSend.push(generateAlbum(album));
-                        }
-        
-                        res.status(statusCodes.success).json({
-                            page: parseInt(req.query.page),
-                            total: countRes,
-                            list: albumsToSend
-                        });
-                    })
-                    .catch(error => {
-                        res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal_tr,
-                            actual_message: errorMessages.internal,
-                            error
-                        });
-                    });
-            })
-            .catch(error => {
-                res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal_tr,
-                    actual_message: errorMessages.internal,
-                    error
-                });
+            res.status(statusCodes.success).json({
+                page: parseInt(req.query.page),
+                total: albumsCount,
+                list: albums.map(album => generateAlbum(album))
             });
+        } catch (error) {
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
+            });
+        }
     } else {
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
