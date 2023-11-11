@@ -12,11 +12,12 @@ const { generateSuccessLogger, generateErrorLogger } = require('../helpers/logge
 
 const { ErrorKind } = require('../enums/errorKind');
 const { AdminRole } = require('../enums/adminRole');
-const { LogType } = require('../enums/logType');
 
 const { parseJwt } = require('../middlewares/common');
 
 exports.getAll = async (req, res) => {
+
+    console.log('req', req.method);
 
     const token = req.headers.authorization;
 	const loggedInUser = parseJwt(token);
@@ -48,7 +49,7 @@ exports.getAll = async (req, res) => {
             .skip(skip).limit(parseInt(req.query.take));
         const albumsCount = await Album.find().count();
 
-        await Logger.insertMany(generateSuccessLogger(loggedInUser, req.originalUrl));
+        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
 
         res.status(statusCodes.success).json({
             page: parseInt(req.query.page),
@@ -56,7 +57,7 @@ exports.getAll = async (req, res) => {
             list: albums.map(album => generateAlbum(album))
         });
     } catch (error) {
-        await Logger.insertMany(generateErrorLogger(loggedInUser, req.originalUrl, error));
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
 
         res.status(statusCodes.server_error).json({
             message: errorMessages.internal_tr,
@@ -79,22 +80,23 @@ exports.getSingle = async (req, res) => {
         filters._id = id;
         if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
 		    filters.active = true;
-	    }
+	    } // if user is not album get only active albums
         
         try {
             const albums = await Album.find(filters);
             if(albums.length === 0) {
-                await Logger.insertMany(generateErrorLogger(loggedInUser, req.originalUrl, errorMessages.not_exist('Album', id)));
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Album', id)));
 
                 res.status(statusCodes.user_error).json({
                     message: errorMessages.album_not_exist_tr,
                     actual_message: errorMessages.not_exist('Album', id)
                 });
             } else {
-                await Logger.insertMany(generateSuccessLogger(loggedInUser, req.originalUrl));
+                await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
                 res.status(statusCodes.success).send(generateAlbum(albums[0]));
             }
         } catch (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
             if(error.kind === ErrorKind.ID) {
                 res.status(statusCodes.user_error).json({
                     message: errorMessages.invalid_id_tr,
@@ -109,6 +111,7 @@ exports.getSingle = async (req, res) => {
             }
         }
     } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
@@ -117,6 +120,9 @@ exports.getSingle = async (req, res) => {
 }
 
 exports.getAllSoftDeleted = async (req, res) => {
+    const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
+
     let skip = 0;
     if(parseInt(req.query.page) === 1) {
         skip = 0;
@@ -129,12 +135,14 @@ exports.getAllSoftDeleted = async (req, res) => {
             .skip(skip).limit(parseInt(req.query.take));
         const albumsCount = await Album.find({ active: true }).count();
 
+        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
         res.status(statusCodes.success).json({
             page: parseInt(req.query.page),
             total: albumsCount,
             list: albums.map(album => generateAlbum(album))
         });
     } catch (error) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
         res.status(statusCodes.server_error).json({
             message: errorMessages.internal_tr,
             actual_message: errorMessages.internal,
@@ -144,6 +152,9 @@ exports.getAllSoftDeleted = async (req, res) => {
 }
 
 exports.getAllAssignedTo = async (req, res) => {
+    const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
+
     const userId = req.params.userId;
 
     if(userId) {
@@ -159,12 +170,14 @@ exports.getAllAssignedTo = async (req, res) => {
                 .skip(skip).limit(parseInt(req.query.take));
             const albumsCount = await Album.find({ assigned_to_id: userId, active: true }).count();
 
+            await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
             res.status(statusCodes.success).json({
                 page: parseInt(req.query.page),
                 total: albumsCount,
                 list: albums.map(album => generateAlbum(album))
             });
         } catch (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
             res.status(statusCodes.server_error).json({
                 message: errorMessages.internal_tr,
                 actual_message: errorMessages.internal,
@@ -172,6 +185,7 @@ exports.getAllAssignedTo = async (req, res) => {
             });
         }
     } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
@@ -180,6 +194,9 @@ exports.getAllAssignedTo = async (req, res) => {
 }
 
 exports.getAllAssignedBy = async (req, res) => {
+    const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
+
     const userId = req.params.userId;
 
     if(userId) {
@@ -201,12 +218,14 @@ exports.getAllAssignedBy = async (req, res) => {
                 active: true
             }).count();
 
+            await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
             res.status(statusCodes.success).json({
                 page: parseInt(req.query.page),
                 total: albumsCount,
                 list: albums.map(album => generateAlbum(album))
             });
         } catch (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
             res.status(statusCodes.server_error).json({
                 message: errorMessages.internal_tr,
                 actual_message: errorMessages.internal,
@@ -214,6 +233,7 @@ exports.getAllAssignedBy = async (req, res) => {
             });
         }
     } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
@@ -243,12 +263,14 @@ exports.getAllCreatedBy = async (req, res) => {
                 active: true
             }).count();
 
+            await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
             res.status(statusCodes.success).json({
                 page: parseInt(req.query.page),
                 total: albumsCount,
                 list: albums.map(album => generateAlbum(album))
             });
         } catch (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
             res.status(statusCodes.server_error).json({
                 message: errorMessages.internal_tr,
                 actual_message: errorMessages.internal,
@@ -256,6 +278,7 @@ exports.getAllCreatedBy = async (req, res) => {
             });
         }
     } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
@@ -263,7 +286,7 @@ exports.getAllCreatedBy = async (req, res) => {
     }
 }
 // add new
-exports.addNew = (req, res) => {
+exports.addNew = async (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
 
@@ -283,288 +306,143 @@ exports.addNew = (req, res) => {
     };
 
     if(data.title === '' || !data.title) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.required_field('Title')));
+
         res.status(statusCodes.user_error).json({
             message: errorMessages.required_field_tr.title,
             actual_message: errorMessages.required_field('Title')
         });
     } else if(data.date === '' || !data.date) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.required_field('Date')));
+
         res.status(statusCodes.user_error).json({
             message: errorMessages.required_field_tr.date,
             actual_message: errorMessages.required_field('Date')
         });
     } else {
         if (data.assigned_to_id) {
-            Client.find({  _id: data.assigned_to_id })
-                .then(clients => {
-                    if (clients.length === 0) {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.client_not_exist_tr,
-                            actual_message: errorMessages.not_exist('Client', data.assigned_to_id)
-                        });
-                    } else {
-                        data['assigned_to'] = JSON.stringify(generateCleanModel(clients[0]));
+            const clients = await Client.find({ _id: data.assigned_to_id });
+            if (clients.length === 0) {
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Client', data.assigned_to_id)));
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.client_not_exist_tr,
+                    actual_message: errorMessages.not_exist('Client', data.assigned_to_id)
+                });
+            } else {
+                data['assigned_to'] = JSON.stringify(generateCleanModel(clients[0]));
 
-                        Album.insertMany(data)
-                            .then(addNewRes => {
-                                res.status(statusCodes.success).json({
-                                    message: successMessages.album_created_tr,
-                                    actual_message: successMessages.album_created,
-                                    album: generateAlbum(addNewRes[0])
-                                });
-                            })
-                            .catch(error => {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal_tr,
-                                    actual_message: errorMessages.internal,
-                                    error
-                                });
-                            })
-                    }
-                })
-        } else {
-            Album.insertMany(data)
-                .then(addNewRes => {
+                try {
+                    const albums = await Album.insertMany(data);
+                    await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
                     res.status(statusCodes.success).json({
                         message: successMessages.album_created_tr,
                         actual_message: successMessages.album_created,
-                        album: generateAlbum(addNewRes[0])
+                        album: generateAlbum(albums[0])
                     });
-                })
-                .catch(error => {
+                } catch (error) {
+                    await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
                     res.status(statusCodes.server_error).json({
                         message: errorMessages.internal_tr,
                         actual_message: errorMessages.internal,
                         error
                     });
-                })
+                }
+            }
+        } else {
+            try {
+                const albums = await Album.insertMany(data);
+                await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                res.status(statusCodes.success).json({
+                    message: successMessages.album_created_tr,
+                    actual_message: successMessages.album_created,
+                    album: generateAlbum(albums[0])
+                });
+            } catch (error) {
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
+                });
+            }
         }
     }
 }
 
-exports.edit = (req, res) => {
-    const id = req.params.id;
-
+exports.edit = async (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
 
-    if(id) {
-        Album.find({ _id: id, active: true })
-            .then(albums => {
-                if(albums.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.album_not_exist_tr,
-                        actual_message: errorMessages.not_exist('Album', id)
-                    });
-                } else {
-                    const data = { 
-                        ...req.body,
-
-                        modified_date: generateDate(),
-                        modified_time: generateTime(),
-                        modified_by_id: loggedInUser.id,
-                        modified_by: loggedInUser
-                    };
-
-                    if (req.body.assigned_to_id) {
-                        Client.find({ _id: req.body.assigned_to_id })
-                            .then(clients => {
-                                if (clients.length === 0) {
-                                    res.status(statusCodes.user_error).json({
-                                        message: errorMessages.client_not_exist_tr,
-                                        actual_message: errorMessages.not_exist('Client', req.body.assigned_to_id)
-                                    });
-                                } else {
-                                    data['assigned_to'] = generateCleanModel(clients[0]);
-
-                                    Album.updateOne(
-                                        { _id: id },
-                                        { ...data }
-                                    )
-                                    .then(_ => {
-                                        Album.find({ _id: id })
-                                            .then(newAlbum => {
-                                                res.status(statusCodes.success).json({
-                                                    message: successMessages.album_updated_tr,
-                                                    actual_message: successMessages.album_updated,
-                                                    album: generateAlbum(newAlbum[0]),
-                                                });
-                                            })
-                                            .catch(error => {
-                                                console.log(error);
-                                                if(error.kind === ErrorKind.ID) {
-                                                    res.status(statusCodes.user_error).json({
-                                                        message: errorMessages.invalid_id_tr,
-                                                        actual_message: errorMessages.invalid_id(id)
-                                                    });
-                                                } else {
-                                                    res.status(statusCodes.server_error).json({
-                                                        message: errorMessages.internal_tr,
-                                                        actual_message: errorMessages.internal,
-                                                        error
-                                                    });
-                                                }
-                                            })
-                                    })
-                                    .catch(error => {
-                                        console.log(error);
-                                        if(error.kind === ErrorKind.ID) {
-                                            res.status(statusCodes.user_error).json({
-                                                message: errorMessages.invalid_id_tr,
-                                                actual_message: errorMessages.invalid_id(id)
-                                            });
-                                        } else {
-                                            res.status(statusCodes.server_error).json({
-                                                message: errorMessages.internal_tr,
-                                                actual_message: errorMessages.internal,
-                                                error
-                                            });
-                                        }
-                                    });
-                                }
-                            })
-                    } else {
-                        Album.updateOne(
-                            { _id: id },
-                            { ...data }
-                        )
-                        .then(_ => {
-                            Album.find({ _id: id })
-                                .then(newAlbum => {
-                                    res.status(statusCodes.success).json({
-                                        message: successMessages.album_updated_tr,
-                                        actual_message: successMessages.album_updated,
-                                        album: generateAlbum(newAlbum[0])
-                                    });
-                                })
-                                .catch(error => {
-                                    console.log(error);
-                                    if(error.kind === ErrorKind.ID) {
-                                        res.status(statusCodes.user_error).json({
-                                            message: errorMessages.invalid_id_tr,
-                                            actual_message: errorMessages.invalid_id(id)
-                                        });
-                                    } else {
-                                        res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal_tr,
-                                            actual_message: errorMessages.internal,
-                                            error
-                                        });
-                                    }
-                                })
-                        })
-                        .catch(error => {
-                            console.log(error);
-                            if(error.kind === ErrorKind.ID) {
-                                res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id_tr,
-                                    actual_message: errorMessages.invalid_id(id)
-                                });
-                            } else {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal_tr,
-                                    actual_message: errorMessages.internal,
-                                    error
-                                });
-                            }
-                        });
-                    }
-                }
-            })
-            .catch(error => {
-                console.log(error);
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id_tr,
-                        actual_message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing_tr,
-            actual_message: errorMessages.id_missing
-        });
-    }
-}
-
-exports.images = (req, res) => {
     const id = req.params.id;
 
-    const images = req.body.images;
-    const splittedImages = images.split(',');
-    
-    const token = req.headers.authorization;
-    const loggedInUser = parseJwt(token);
+    const data = { 
+        ...req.body,
+
+        modified_date: generateDate(),
+        modified_time: generateTime(),
+        modified_by_id: loggedInUser.id,
+        modified_by: loggedInUser
+    };
 
     if(id) {
-        if(images) {
-            Album.find({ _id: id, active: true })
-                .then(albums => {
-                    if(albums.length === 0) {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.album_not_exist_tr,
-                            actual_message: errorMessages.not_exist('Album', id)
-                        });
-                    } else {
-                        Album.updateOne(
-                            { _id: id },
-                            { 
-                                images: images,
-                                images_count: splittedImages.length,
+        const albums = await Album.find({ _id: id, active: true });
+        if (albums.length === 0) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Album', id)));
+            res.status(statusCodes.user_error).json({
+                message: errorMessages.album_not_exist_tr,
+                actual_message: errorMessages.not_exist('Album', id)
+            });
+        } else {
+            if (req.body.assigned_to_id) {
+                const clients = await clients.find({ _id: req.body.assigned_to_id });
+                if (clients.length === 0) {
+                    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Client', req.body.assigned_to_id)));
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.client_not_exist_tr,
+                        actual_message: errorMessages.not_exist('Client', req.body.assigned_to_id)
+                    });
+                } else {
+                    data['assigned_to'] = generateCleanModel(clients[0]);
 
-                                modified_date: generateDate(),
-                                modified_time: generateTime(),
-                                modified_by_id: loggedInUser.id,
-                                modified_by: loggedInUser
-                            }
-                        )
-                            .then(_ => {
-                                Album.find({ _id: id })
-                                    .then(newAlbum => {
-                                        res.status(statusCodes.success).json({
-                                            message: successMessages.album_images_updated_tr,
-                                            actual_message: successMessages.album_images_updated,
-                                            album: generateAlbum(newAlbum[0])
-                                        });
-                                    })
-                                    .catch(error => {
-                                        if(error.kind === ErrorKind.ID) {
-                                            res.status(statusCodes.user_error).json({
-                                                message: errorMessages.invalid_id_tr,
-                                                actual_message: errorMessages.invalid_id(id)
-                                            });
-                                        } else {
-                                            res.status(statusCodes.server_error).json({
-                                                message: errorMessages.internal_tr,
-                                                actual_message: errorMessages.internal,
-                                                error
-                                            });
-                                        }
-                                    })
-                            })
-                            .catch(error => {
-                                if(error.kind === ErrorKind.ID) {
-                                    res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id_tr,
-                                        actual_message: errorMessages.invalid_id(id)
-                                    });
-                                } else {
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal_tr,
-                                        actual_message: errorMessages.internal,
-                                        error
-                                    });
-                                }
-                            })
+                    try {
+                        await Album.updateOne({ _id: id }, { ...data });
+                        const updatedAlbum = await Album.find({ _id: id });
+
+                        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                        res.status(statusCodes.success).json({
+                            message: successMessages.album_updated_tr,
+                            actual_message: successMessages.album_updated,
+                            album: generateAlbum(updatedAlbum[0]),
+                        });
+                    } catch (error) {
+                        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+                        if(error.kind === ErrorKind.ID) {
+                            res.status(statusCodes.user_error).json({
+                                message: errorMessages.invalid_id_tr,
+                                actual_message: errorMessages.invalid_id(id)
+                            });
+                        } else {
+                            res.status(statusCodes.server_error).json({
+                                message: errorMessages.internal_tr,
+                                actual_message: errorMessages.internal,
+                                error
+                            });
+                        }
                     }
-                })
-                .catch(error => {
+                }
+            } else {
+                try {
+                    await Album.updateOne({ _id: id }, { ...data });
+                    const updatedAlbum = await Album.find({ _id: id });
+
+                    await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                    res.status(statusCodes.success).json({
+                        message: successMessages.album_updated_tr,
+                        actual_message: successMessages.album_updated,
+                        album: generateAlbum(updatedAlbum[0]),
+                    });
+                } catch (error) {
+                    await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
                     if(error.kind === ErrorKind.ID) {
                         res.status(statusCodes.user_error).json({
                             message: errorMessages.invalid_id_tr,
@@ -577,14 +455,83 @@ exports.images = (req, res) => {
                             error
                         });
                     }
-                })
+                }
+            }
+        }
+    } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
+        });
+    }
+}
+
+exports.images = async (req, res) => {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    const id = req.params.id;
+
+    const images = req.body.images;
+    const splittedImages = images.split(',');
+
+    if(id) {
+        if(images) {
+            const albums = await Album.find({ _id: id, active: true });
+            if (albums.length === 0) {
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Album', id)));
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.album_not_exist_tr,
+                    actual_message: errorMessages.not_exist('Album', id)
+                });
+            } else {
+                try {
+                    await Album.updateOne(
+                        { _id: id },
+                        { 
+                            images: images,
+                            images_count: splittedImages.length,
+
+                            modified_date: generateDate(),
+                            modified_time: generateTime(),
+                            modified_by_id: loggedInUser.id,
+                            modified_by: loggedInUser
+                        }
+                    );
+                    const updatedAlbum = await Album.find({ _id: id });
+
+                    await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                    res.status(statusCodes.success).json({
+                        message: successMessages.album_images_updated_tr,
+                        actual_message: successMessages.album_images_updated,
+                        album: generateAlbum(updatedAlbum[0])
+                    });
+                } catch (error) {
+                    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(id)));
+                    if(error.kind === ErrorKind.ID) {
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.invalid_id_tr,
+                            actual_message: errorMessages.invalid_id(id)
+                        });
+                    } else {
+                        res.status(statusCodes.server_error).json({
+                            message: errorMessages.internal_tr,
+                            actual_message: errorMessages.internal,
+                            error
+                        });
+                    }
+                }
+            }
         } else {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.select_images));
             res.status(statusCodes.user_error).json({
                 message: errorMessages.select_images_tr,
                 actual_message: errorMessages.select_images
             });
         }
     } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
@@ -592,210 +539,66 @@ exports.images = (req, res) => {
     }
 }
 
-exports.selectedImages = (req, res) => {
-    const id = req.params.id;
-
-    if(id) {
-        Album.find({ _id: id, active: true })
-            .then(albums => {
-                if(albums.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.album_not_exist_tr,
-                        actual_message: errorMessages.not_exist('Album', id)
-                    });
-                } else {
-                    const selectedImages = req.body.selected_images;
-                    const splittedImages = selectedImages.split(',');
-
-                    if(selectedImages) {
-                        Album.updateOne(
-                            { _id: id },
-                            { 
-                                selected_images: selectedImages,
-                                selected_images_count: splittedImages.length
-                            }
-                        )
-                        .then(_ => {
-                            Album.find({ _id: id })
-                                .then(newAlbum => {
-                                    res.status(statusCodes.success).json({
-                                        message: successMessages.album_images_selected_tr,
-                                        actual_message: successMessages.album_images_selected,
-                                        album: generateAlbum(newAlbum[0])
-                                    });
-                                })
-                                .catch(error => {
-                                    if(error.kind === ErrorKind.ID) {
-                                        res.status(statusCodes.user_error).json({
-                                            message: errorMessages.invalid_id_tr,
-                                            actual_message: errorMessages.invalid_id(id)
-                                        });
-                                    } else {
-                                        res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal_tr,
-                                            actual_message: errorMessages.internal,
-                                            error
-                                        });
-                                    }
-                                })
-                        })
-                        .catch(error => {
-                            if(error.kind === ErrorKind.ID) {
-                                res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id_tr,
-                                    actual_message: errorMessages.invalid_id(id)
-                                });
-                            } else {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal_tr,
-                                    actual_message: errorMessages.internal,
-                                    error
-                                });
-                            }
-                        })
-                    } else {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.select_images_tr,
-                            actual_message: errorMessages.select_images
-                        });
-                    }
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id_tr,
-                        actual_message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
-    } else {
-        res.status(statusCodes.user_error).json({
-            message: errorMessages.id_missing_tr,
-            actual_message: errorMessages.id_missing
-        });
-    }
-}
-
-exports.assignUser = (req, res) => {
-    const id = req.params.id;
-    const newUser = req.body.user;
-
+exports.selectedImages = async (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
 
-    if(id) {
-        Album.find({ _id: id, active: true })
-            .then(albums => {
-                if(albums.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.album_not_exist_tr,
-                        actual_message: errorMessages.not_exist('Album', id)
-                    });
-                } else {
-                    if(newUser) {
-                        Client.find({ _id: newUser, active: true })
-                            .then(clients => {
-                                if(clients.length === 0) {
-                                    res.status(statusCodes.user_error).json({
-                                        message: errorMessages.client_not_exist_tr,
-                                        actual_message: errorMessages.not_exist('Client', id)
-                                    });
-                                } else {
-                                    Album.updateOne(
-                                        { _id: id },
-                                        { 
-                                            assigned_to_id: clients[0]._id,
-                                            assigned_to: generateCleanModel(clients[0]),
+    const id = req.params.id;
 
-                                            modified_date: generateDate(),
-                                            modified_time: generateTime(),
-                                            modified_by_id: loggedInUser.id,
-                                            modified_by: loggedInUser
-                                        }
-                                    )
-                                    .then(_ => {
-                                        Album.find({ _id: id })
-                                            .then(newAlbum => {
-                                                res.status(statusCodes.success).json({
-                                                    message: 'User has been assigned.',
-                                                    album: generateAlbum(newAlbum[0])
-                                                });
-                                            })
-                                            .catch(error => {
-                                                if(error.kind === ErrorKind.ID) {
-                                                    res.status(statusCodes.user_error).json({
-                                                        message: errorMessages.invalid_id_tr,
-                                                        actual_message: errorMessages.invalid_id(id)
-                                                    });
-                                                } else {
-                                                    res.status(statusCodes.server_error).json({
-                                                        message: errorMessages.internal_tr,
-                                                        actual_message: errorMessages.internal,
-                                                        error
-                                                    });
-                                                }
-                                            })
-                                    })
-                                    .catch(error => {
-                                        if(error.kind === ErrorKind.ID) {
-                                            res.status(statusCodes.user_error).json({
-                                                message: errorMessages.invalid_id_tr,
-                                                actual_message: errorMessages.invalid_id(id)
-                                            });
-                                        } else {
-                                            res.status(statusCodes.server_error).json({
-                                                message: errorMessages.internal_tr,
-                                                actual_message: errorMessages.internal,
-                                                error
-                                            });
-                                        }
-                                    })
-                                }
-                            })
-                            .catch(error => {
-                                if(error.kind === ErrorKind.ID) {
-                                    res.status(statusCodes.user_error).json({
-                                        message: errorMessages.invalid_id_tr,
-                                        actual_message: errorMessages.invalid_id(id)
-                                    });
-                                } else {
-                                    res.status(statusCodes.server_error).json({
-                                        message: errorMessages.internal_tr,
-                                        actual_message: errorMessages.internal,
-                                        error
-                                    });
-                                }
-                            })
-                    } else {
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.required_field_tr.new_user,
-                            actual_message: errorMessages.required_field('New user')
-                        });
-                    }
-                }
-            })
-            .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id_tr,
-                        actual_message: errorMessages.invalid_id(id)
+    const selectedImages = req.body.selected_images;
+    const splittedImages = selectedImages.split(',');
+
+    if(id) {
+        try {
+            const albums = await Album.find({ _id: id, active: true });
+            if (albums.length === 0) {
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Album', id)));
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.album_not_exist_tr,
+                    actual_message: errorMessages.not_exist('Album', id)
+                });
+            } else {
+                if (selectedImages) {
+                    await Album.updateOne(
+                        { _id: id },
+                        { 
+                            selected_images: selectedImages,
+                            selected_images_count: splittedImages.length
+                        }
+                    );
+                    const updatedAlbum = await Album.find({ _id: id, active: true });
+
+                    await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                    res.status(statusCodes.success).json({
+                        message: successMessages.album_images_selected_tr,
+                        actual_message: successMessages.album_images_selected,
+                        album: generateAlbum(updatedAlbum[0])
                     });
                 } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
+                    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.select_images));
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.select_images_tr,
+                        actual_message: errorMessages.select_images
                     });
                 }
-            })
+            }
+        } catch (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+            if(error.kind === ErrorKind.ID) {
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.invalid_id_tr,
+                    actual_message: errorMessages.invalid_id(id)
+                });
+            } else {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
+                });
+            }
+        }
     } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
@@ -803,62 +606,132 @@ exports.assignUser = (req, res) => {
     }
 }
 
-exports.statusChange = (req, res) => {
+exports.assignUser = async (req, res) => {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
     const id = req.params.id;
+    const newUser = req.body.user;
+
+    if(id) {
+        try {
+            const albums = await Album.find({ _id: id, active: true });
+            if (albums.length === 0) {
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Album', id)));
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.album_not_exist_tr,
+                    actual_message: errorMessages.not_exist('Album', id)
+                });
+            } else {
+                if(newUser) {
+                    const clients = await Client.find({ _id: newUser, active: true });
+                    if (clients.length === 0) {
+                        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Client', id)));
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.client_not_exist_tr,
+                            actual_message: errorMessages.not_exist('Client', id)
+                        });
+                    } else {
+                        await Album.updateOne(
+                            { _id: id },
+                            { 
+                                assigned_to_id: clients[0]._id,
+                                assigned_to: generateCleanModel(clients[0]),
+
+                                modified_date: generateDate(),
+                                modified_time: generateTime(),
+                                modified_by_id: loggedInUser.id,
+                                modified_by: loggedInUser
+                            }
+                        );
+                        const updatedAlbum = await Album.find({ _id: id, active: true });
+
+                        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                        res.status(statusCodes.success).json({
+                            message: 'User has been assigned.',
+                            album: generateAlbum(updatedAlbum[0])
+                        });
+                    }
+                } else {
+                    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.required_field('New user')));
+                    res.status(statusCodes.user_error).json({
+                        message: errorMessages.required_field_tr.new_user,
+                        actual_message: errorMessages.required_field('New user')
+                    });
+                }
+            }
+        } catch (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+            if(error.kind === ErrorKind.ID) {
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.invalid_id_tr,
+                    actual_message: errorMessages.invalid_id(id)
+                });
+            } else {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
+                });
+            }
+        }
+    } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
+        });
+    }
+}
+
+exports.statusChange = async (req, res) => {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    const id = req.params.id;
+
     const status = req.params.status;
 
     if(id) {
-        Album.find({ _id: id })
-            .then(albums => {
-                if(albums.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.album_not_exist_tr,
-                        actual_message: errorMessages.not_exist('Album', id)
-                    });
-                } else {
-                    Album.updateOne(
-                        { _id: id }, 
-                        { active: status }
-                    )
-                        .then(_ => {
-                            res.status(statusCodes.success).json({
-                                message: successMessages.album_status_updated_tr,
-                                actual_message: successMessages.album_status_updated
-                            });
-                        })
-                        .catch(error => {
-                            console.log(error);
-                            if(error.kind === ErrorKind.ID) {
-                                res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id_tr,
-                                    actual_message: errorMessages.invalid_id(id)
-                                });
-                            } else {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal_tr,
-                                    actual_message: errorMessages.internal,
-                                    error
-                                });
-                            }
-                        })
-                }
-            })
-            .catch(error => {
-                console.log(error)
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id_tr,
-                        actual_message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
+        try {
+            const albums = await Album.find({ _id: id });
+            if (albums.length === 0) {
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Album', id)));
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.album_not_exist_tr,
+                    actual_message: errorMessages.not_exist('Album', id)
+                });
+            } else {
+                await Album.updateOne(
+                    { _id: id }, 
+                    { active: status }
+                );
+                const updatedAlbum = await Album.find({ _id: id });
+
+                await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                res.status(statusCodes.success).json({
+                    message: successMessages.album_status_updated_tr,
+                    actual_message: successMessages.album_status_updated,
+                    album: generateAlbum(updatedAlbum[0])
+                });
+            }
+        } catch (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+            if(error.kind === ErrorKind.ID) {
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.invalid_id_tr,
+                    actual_message: errorMessages.invalid_id(id)
+                });
+            } else {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
+                });
+            }
+        }
     } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
@@ -866,76 +739,48 @@ exports.statusChange = (req, res) => {
     }
 }
 
-exports.delete = (req, res) => {
+exports.delete = async (req, res) => {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
     const id = req.params.id;
 
     if(id) {
-        Album.find({ _id: id })
-            .then(albums => {
-                if(albums.length === 0) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.album_not_exist_tr,
-                        actual_message: errorMessages.not_exist('Album', id)
-                    });
-                } else {
-                    Album.deleteOne({ _id: id })
-                        .then(_ => {
-                            Image.deleteMany({ album_id: id })
-                                .then(() => {
-                                    res.status(statusCodes.success).json({
-                                        message: successMessages.album_deleted_tr,
-                                        actual_message: successMessages.album_deleted(generateAlbum(albums[0]))
-                                    });
-                                })
-                                .catch(error => {
-                                    if(error.kind === ErrorKind.ID) {
-                                        res.status(statusCodes.user_error).json({
-                                            message: errorMessages.invalid_id_tr,
-                                            actual_message: errorMessages.invalid_id(id)
-                                        });
-                                    } else {
-                                        console.log(error);
-                                        res.status(statusCodes.server_error).json({
-                                            message: errorMessages.internal_tr,
-                                            actual_message: errorMessages.internal,
-                                            error
-                                        });
-                                    }
-                                })
-                        })
-                        .catch(error => {
-                            console.log(error);
-                            if(error.kind === ErrorKind.ID) {
-                                res.status(statusCodes.user_error).json({
-                                    message: errorMessages.invalid_id_tr,
-                                    actual_message: errorMessages.invalid_id(id)
-                                });
-                            } else {
-                                res.status(statusCodes.server_error).json({
-                                    message: errorMessages.internal_tr,
-                                    actual_message: errorMessages.internal,
-                                    error
-                                });
-                            }
-                        })
-                }
-            })
-            .catch(error => {
-                console.log(error)
-                if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                        message: errorMessages.invalid_id_tr,
-                        actual_message: errorMessages.invalid_id(id)
-                    });
-                } else {
-                    res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error
-                    });
-                }
-            })
+        try {
+            const albums = await Album.find({ _id: id });
+            if (albums.length === 0) {
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Album', id)));
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.album_not_exist_tr,
+                    actual_message: errorMessages.not_exist('Album', id)
+                });
+            } else {
+                await Album.deleteOne({ _id: id });
+                await Image.deleteMany({ album_id: id });
+
+                await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                res.status(statusCodes.success).json({
+                    message: successMessages.album_deleted_tr,
+                    actual_message: successMessages.album_deleted(generateAlbum(albums[0]))
+                });
+            }
+        } catch (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+            if(error.kind === ErrorKind.ID) {
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.invalid_id_tr,
+                    actual_message: errorMessages.invalid_id(id)
+                });
+            } else {
+                res.status(statusCodes.server_error).json({
+                    message: errorMessages.internal_tr,
+                    actual_message: errorMessages.internal,
+                    error
+                });
+            }
+        }
     } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
         res.status(statusCodes.user_error).json({
             message: errorMessages.id_missing_tr,
             actual_message: errorMessages.id_missing
