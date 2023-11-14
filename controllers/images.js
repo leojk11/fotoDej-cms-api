@@ -44,9 +44,6 @@ exports.getImage = async (req, res) => {
 }
 
 exports.getAlbumImage = async (req, res) => {
-    const token = req.headers.authorization;
-	const loggedInUser = parseJwt(token);
-
     const albumId = req.params.id;
 
     if(req.params.img) {
@@ -57,25 +54,33 @@ exports.getAlbumImage = async (req, res) => {
             const newPath = `./images/${ albumId }/${ splittedImage[0] }_resize.${ splittedImage[1] }`;
             
             if (!fs.existsSync(newPath)) {
-                Jimp.read(localPath, (err, image) => {
-                    if (err) throw err;
-                    image.resize(300, 300)
+                Jimp.read(localPath, async (err, image) => {
+                    if (err) {
+                        await Logger.insertMany(generateErrorLogger(null, req, errorMessages.image_not_exist));
+                        res.status(statusCodes.user_error).json({
+                            message: errorMessages.image_not_exist_tr,
+                            actual_message: errorMessages.image_not_exist
+                        });
+                    } else {
+                        image.resize(300, 300)
                         .writeAsync(newPath).then(async () => {
-                            await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                            await Logger.insertMany(generateSuccessLogger(null, req));
                             res.sendFile(newPath, { root: '.' });
                         }).catch(async error => {
-                            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+                            await Logger.insertMany(generateErrorLogger(null, req, error));
                             res.status(statusCodes.server_error).json({
                                 message: errorMessages.internal_tr,
                                 actual_message: errorMessages.internal,
                                 error
                             });
                         })
+                    }
+
                 });
             } else {
                 res.sendFile(newPath, { root: '.' }, async (error) => {
                     if (error) {
-                        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.image_not_exist));
+                        await Logger.insertMany(generateErrorLogger(null, req, errorMessages.image_not_exist));
                         res.status(statusCodes.user_error).json({
                             message: errorMessages.image_not_exist_tr,
                             actual_message: errorMessages.image_not_exist
@@ -84,7 +89,7 @@ exports.getAlbumImage = async (req, res) => {
                 });
             }
         } catch (error) {
-            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+            await Logger.insertMany(generateErrorLogger(null, req, error));
             res.status(statusCodes.server_error).json({
                 message: errorMessages.internal_tr,
                 actual_message: errorMessages.internal,
@@ -92,7 +97,7 @@ exports.getAlbumImage = async (req, res) => {
             });
         }
     } else {
-        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.provide_image_name));
+        await Logger.insertMany(generateErrorLogger(null, req, errorMessages.provide_image_name));
         res.status(statusCodes.user_error).json({
             message: errorMessages.provide_image_name_tr,
             actual_message: errorMessages.provide_image_name
