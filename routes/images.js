@@ -9,6 +9,7 @@ router.get('/:img', images.getImage);
 router.get('/album_image/:id/:img', images.getAlbumImage);
 router.get('/album/:id', images.getImagesForAlbum);
 router.get('/album/:id/selected', images.getSelectedImagesForAlbum);
+router.get('/base64/:image', images.getImageBase64);
 
 router.post('/:albumId', images.uploadImagesV2);
 router.post('/album/:id', verifyToken, images.uploadImagesForAlbum);
