@@ -19,10 +19,10 @@ exports.get = async(req, res) => {
     try {
         const configuration = await FeConfiguration.find();
 
-        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+        await Logger.insertMany(generateSuccessLogger(null, req));
         res.status(statusCodes.success).send(generateConf(configuration[0]));
     } catch (error) {
-        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        await Logger.insertMany(generateErrorLogger(null, req, error));
         res.status(statusCodes.server_error).json({
             message: errorMessages.internal_tr,
             actual_message: errorMessages.internal,
