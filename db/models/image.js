@@ -7,8 +7,7 @@ const imageSchema = new Schema({
         required: true
     },
     album_id: {
-        type: String,
-        required: true
+        type: String
     },
     disabled: {
         type: Boolean,

@@ -219,17 +219,12 @@ exports.uploadImagesV2 = async (req, res) => {
             const file = req.files.images;
             const imageData = {
                 name: file.name,
-                album_id: req.params.albumId,
+                album_id: albumId,
                 disabled: false
             };
-    
-            const dir = `${ imagesPath }/${ albumId }`;
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
 
             await Image.insertMany(imageData);
-            file.mv(`${ dir }/` + file.name).then();
+            file.mv(`${ imagesPath }` + file.name).then();
 
             await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
             res.status(statusCodes.success).json({ 
