@@ -13,9 +13,6 @@ const { generateSuccessLogger, generateErrorLogger } = require('../helpers/logge
 const { parseJwt } = require('../middlewares/common');
 
 exports.get = async(req, res) => {
-    const token = req.headers.authorization;
-	const loggedInUser = parseJwt(token);
-
     try {
         const configuration = await FeConfiguration.find();
 
