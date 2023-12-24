@@ -74,32 +74,32 @@ exports.getAlbumImage = async (req, res) => {
             const splittedImage = image.split('.');
             const newPath = `./images/${ albumId }/${ splittedImage[0] }_resize.${ splittedImage[1] }`;
             
-            if (!fs.existsSync(newPath)) {
-                Jimp.read(localPath, async (err, image) => {
-                    if (err) {
-                        await Logger.insertMany(generateErrorLogger(null, req, errorMessages.image_not_exist));
-                        res.status(statusCodes.user_error).json({
-                            message: errorMessages.image_not_exist_tr,
-                            actual_message: errorMessages.image_not_exist
-                        });
-                    } else {
-                        image.resize(300, 300)
-                        .writeAsync(newPath).then(async () => {
-                            await Logger.insertMany(generateSuccessLogger(null, req));
-                            res.sendFile(newPath, { root: '.' });
-                        }).catch(async error => {
-                            await Logger.insertMany(generateErrorLogger(null, req, error));
-                            res.status(statusCodes.server_error).json({
-                                message: errorMessages.internal_tr,
-                                actual_message: errorMessages.internal,
-                                error
-                            });
-                        })
-                    }
+            // if (!fs.existsSync(newPath)) {
+                // Jimp.read(localPath, async (err, image) => {
+                //     if (err) {
+                //         await Logger.insertMany(generateErrorLogger(null, req, errorMessages.image_not_exist));
+                //         res.status(statusCodes.user_error).json({
+                //             message: errorMessages.image_not_exist_tr,
+                //             actual_message: errorMessages.image_not_exist
+                //         });
+                //     } else {
+                //         image.resize(300, 300)
+                //         .writeAsync(newPath).then(async () => {
+                //             await Logger.insertMany(generateSuccessLogger(null, req));
+                //             res.sendFile(newPath, { root: '.' });
+                //         }).catch(async error => {
+                //             await Logger.insertMany(generateErrorLogger(null, req, error));
+                //             res.status(statusCodes.server_error).json({
+                //                 message: errorMessages.internal_tr,
+                //                 actual_message: errorMessages.internal,
+                //                 error
+                //             });
+                //         })
+                //     }
 
-                });
-            } else {
-                res.sendFile(newPath, { root: '.' }, async (error) => {
+                // });
+            // } else {
+                res.sendFile(localPath, { root: '.' }, async (error) => {
                     if (error) {
                         await Logger.insertMany(generateErrorLogger(null, req, errorMessages.image_not_exist));
                         res.status(statusCodes.user_error).json({
@@ -108,7 +108,7 @@ exports.getAlbumImage = async (req, res) => {
                         });
                     }
                 });
-            }
+            // }
         } catch (error) {
             await Logger.insertMany(generateErrorLogger(null, req, error));
             res.status(statusCodes.server_error).json({
@@ -274,7 +274,7 @@ exports.getSelectedImagesForAlbum = async (req, res) => {
             const selectedImages = await SelectedImages.find({ album_id: albumId });
 
             await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
-            res.status(statusCodes.success).selectImages(selectedImages.map(image => generateSelectedImages(image))[0]);
+            res.status(statusCodes.success).send(selectedImages.map(image => generateSelectedImages(image))[0]);
         } catch (error) {
             await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
             res.status(statusCodes.server_error).json({

@@ -50,7 +50,7 @@ const albumSchema = new Schema({
         required: true
     },
     created_by: {
-        type: String,
+        type: Object,
         required: true
     },
 

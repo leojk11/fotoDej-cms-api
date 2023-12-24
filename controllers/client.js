@@ -1,6 +1,7 @@
 const Client = require('../db/models/client');
 const Invite = require('../db/models/invite');
 const ClientLog = require('../db/models/clientLog');
+const Logger = require('../db/models/logger');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -13,6 +14,7 @@ const { successMessages } = require('../helpers/successMessages');
 const { generateClient, generateCleanModel } = require('../helpers/generateModels');
 const { generateDate, generateTime } = require('../helpers/timeDate');
 const { insertNotificaton } = require('../helpers/notificationTools');
+const { generateSuccessLogger, generateErrorLogger } = require('../helpers/logger');
 
 const { ErrorKind } = require('../enums/errorKind');
 const { AccountStatus } = require('../enums/accountStatus');
@@ -23,8 +25,7 @@ const { NotificationType } = require('../enums/notificationType');
 
 const { parseJwt } = require('../middlewares/common');
 
-exports.getAll = (req, res) => {
-
+exports.getAll = async(req, res) => {
 	const token = req.headers.authorization;
 	const loggedInUser = parseJwt(token);
 
@@ -58,6 +59,7 @@ exports.getAll = (req, res) => {
 	}
   if (req.query.status) {
     if(req.query.status !== AccountStatus.ACTIVE && req.query.status !== AccountStatus.SUSPENDED) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_account_status));
       res.status(statusCodes.user_error).json({
         message: errorMessages.invalid_account_status_tr,
         actual_message: errorMessages.invalid_account_status
@@ -68,49 +70,32 @@ exports.getAll = (req, res) => {
     filters.account_status = req.query.status;
   }
 
-	Client.find(filters)
-		.sort({ _id: 'asc' })
-		.skip(skip)
-		.limit(parseInt(req.query.take))
-		.then(clients => {
-			Client.find(filters)
-        .count()
-        .then(countRes => {
-          const clientsToSend = [];
+  try {
+    const clients = await Client.find(filters).sort({ _id: 'asc' }).skip(skip).limit(parseInt(req.query.take));
+    const clientsCount = await Client.find(filters).count();
 
-          for(const client of clients) {
-            clientsToSend.push(generateClient(client));
-          }
-
-          res.status(statusCodes.success).json({
-            page: parseInt(req.query.page),
-            total: countRes,
-            list: clientsToSend
-          });
-        })
-        .catch(error => {
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error: error
-          });
-        })
-		})
-		.catch(error => {
-			res.status(statusCodes.server_error).json({
-				message: errorMessages.internal_tr,
-				actual_message: errorMessages.internal,
-				error: error
-			});
-		})
+    await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+    res.status(statusCodes.success).json({
+      page: parseInt(req.query.page),
+      total: clientsCount,
+      list: clients.map(client => generateClient(client))
+    });
+  } catch (error) {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+    res.status(statusCodes.server_error).json({
+      message: errorMessages.internal_tr,
+      actual_message: errorMessages.internal,
+      error: error
+    });
+  }
 }
 
-exports.getSoftDeletedClients = (req, res) => {
-
+exports.getSoftDeletedClients = async(req, res) => {
 	const token = req.headers.authorization;
 	const loggedInUser = parseJwt(token);
 
 	if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.no_permission));
 		res.status(statusCodes.user_error).json({
 			message: errorMessages.no_permission_tr,
 			actual_message: errorMessages.no_permission,
@@ -126,75 +111,64 @@ exports.getSoftDeletedClients = (req, res) => {
 		}
 
 		const filters = { active: false };
-	
-		Client.find({ ...filters })
-			.sort({ _id: 'asc' })
-			.skip(skip)
-			.limit(parseInt(req.query.take))
-			.then(clients => {
-				Client.find({ ...filters })
-					.count()
-					.then(countRes => {
-						const clientsToSend = [];
-
-						for(const client of clients) {
-							clientsToSend.push(generateClient(client));
-						}
-
-						res.status(statusCodes.success).json({
-							page: parseInt(req.query.page),
-							total: countRes,
-							list: clientsToSend
-						});
-					})
-					.catch(error => {
-						res.status(statusCodes.server_error).json({
-							message: errorMessages.internal_tr,
-							actual_message: errorMessages.internal,
-							error: error
-						});
-					})
-			})
-			.catch(error => {
-				res.status(statusCodes.server_error).json({
-					message: errorMessages.internal_tr,
-					actual_message: errorMessages.internal,
-					error: error
-				});
-			})
+    try {
+      const clients = await Client.find(filters).sort({ _id: 'asc' }).skip(skip).limit(parseInt(req.query.take));
+      const clientsCount = await Client.find(filters).count();
+  
+      await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+      res.status(statusCodes.success).json({
+        page: parseInt(req.query.page),
+        total: clientsCount,
+        list: clients.map(client => generateClient(client))
+      });
+    } catch (error) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+      res.status(statusCodes.server_error).json({
+        message: errorMessages.internal_tr,
+        actual_message: errorMessages.internal,
+        error: error
+      });
+    }
 	}
 }
 
-exports.getSingle = (req, res) => {
+exports.getSingle = async(req, res) => {
+  const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
+
 	const id = req.params.id;
 
 	if(id) {
-		Client.find({ _id: id, active: true })
-			.then(clients => {
-				if(clients.length === 0) {
-					res.status(statusCodes.user_error).json({
-						message: errorMessages.client_not_exist_tr,
-						actual_message: errorMessages.not_exist('Clients', id)
-					});
-				} else {
-					res.status(statusCodes.success).send(generateClient(clients[0]));
-				}
-			})
-			.catch(error => {
-				if(error.kind === ErrorKind.ID) {
-					res.status(statusCodes.user_error).json({
-						message: errorMessages.invalid_id_tr,
-						actual_message: errorMessages.invalid_id(id)
-					});
-				} else {
-					res.status(statusCodes.server_error).json({
-						message: errorMessages.internal_tr,
-						actual_message: errorMessages.internal,
-						error: error
-					});
-				}
-			})
+    try {
+      const clients = await Client.find({ _id: id, active: true });
+      if (clients.length === 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.client_not_exist_tr,
+          actual_message: errorMessages.not_exist('Clients', id)
+        });
+      } else {
+        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+        res.status(statusCodes.success).send(generateClient(clients[0]));
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal_tr,
+          actual_message: errorMessages.internal,
+          error: error
+        });
+      }
+    }
 	} else {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
 		res.status(statusCodes.user_error).json({
 			message: errorMessages.id_missing_tr,
 			actual_message: errorMessages.id_missing
@@ -202,12 +176,10 @@ exports.getSingle = (req, res) => {
 	}
 }
 
-exports.addNew = (req, res) => {
+exports.addNew = async(req, res) => {
 
   const token = req.headers.authorization;
   const loggedInUser = parseJwt(token);
-
-  console.log(loggedInUser);
 
 	const data = { 
 		...req.body,
@@ -222,175 +194,132 @@ exports.addNew = (req, res) => {
     created_by_id: loggedInUser.id
 	};
 
-	if(data.firstname === '' || !data.firstname) {
-    res.status(statusCodes.user_error).json({
-      message: errorMessages.required_field_tr.firstname,
-      actual_message: errorMessages.required_field('firstname')
-    });
-	} else if(data.lastname === '' || !data.lastname) {
-    res.status(statusCodes.user_error).json({
-      message: errorMessages.required_field_tr.lastname,
-      actual_message: errorMessages.required_field('lastname')
-    });
-	} else if(data.username === '' || !data.username) {
-    res.status(statusCodes.user_error).json({
-      message: errorMessages.required_field_tr.username,
-      actual_message: errorMessages.required_field('username')
-    });
-	} else if(data.phone_number === '' || !data.phone_number) {
-    res.status(statusCodes.user_error).json({
-      message: errorMessages.required_field_tr.phone_number,
-      actual_message: errorMessages.required_field('phone_number')
-    });
-	} else if(data.email === '' || !data.email) {
-    res.status(statusCodes.user_error).json({
-      message: errorMessages.required_field_tr.email,
-      actual_message: errorMessages.required_field('email')
-    });
-	} else if(data.password === '' || !data.password) {
-    res.status(statusCodes.user_error).json({
-      message: errorMessages.required_field_tr.password,
-      actual_message: errorMessages.required_field('password')
-    });
-	} else {
-    Client.find({ email: data.email })
-      .then(clients => {
-        if(clients.length > 0) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.user_exist_email_tr,
-            actual_message: `User with email [${ data.email }] already exists.`
-          });
-        } else {
-          data['password'] = bcrypt.hashSync(req.body.password, 10);
-          data['first_password'] = req.body.password;
-
-          Client.insertMany({ ...data })
-            .then(_ => {
-              Client.find({ email: data.email })
-                .then(newClient => {
-                  res.status(statusCodes.success).json({
-                    message: successMessages.client_created_tr,
-                    actual_message: 'Client has been created.',
-                    client: generateClient(newClient[0])
-                  });
-                })
-                .catch(error => {
-                  console.log(error);
-                  res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal_tr,
-                    actual_message: errorMessages.internal,
-                    error: error
-                  });
-                })
-            })
-            .catch(error => {
-              console.log(error);
-              res.status(statusCodes.server_error).json({
-                message: errorMessages.internal_tr,
-                actual_message: errorMessages.internal,
-                error: error
-              });
-            });
-        }
-      })
-      .catch(error => {
-        console.log(error);
-        res.status(statusCodes.server_error).json({
-          message: errorMessages.internal_tr,
-          actual_message: errorMessages.internal,
-          error: error
+  try {
+    if(data.firstname === '' || !data.firstname) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.required_field('firstname')));
+      res.status(statusCodes.user_error).json({
+        message: errorMessages.required_field_tr.firstname,
+        actual_message: errorMessages.required_field('firstname')
+      });
+    } else if(data.lastname === '' || !data.lastname) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.required_field('lastname')));
+      res.status(statusCodes.user_error).json({
+        message: errorMessages.required_field_tr.lastname,
+        actual_message: errorMessages.required_field('lastname')
+      });
+    } else if(data.username === '' || !data.username) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.required_field('username')));
+      res.status(statusCodes.user_error).json({
+        message: errorMessages.required_field_tr.username,
+        actual_message: errorMessages.required_field('username')
+      });
+    } else if(data.phone_number === '' || !data.phone_number) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.required_field('phone_number')));
+      res.status(statusCodes.user_error).json({
+        message: errorMessages.required_field_tr.phone_number,
+        actual_message: errorMessages.required_field('phone_number')
+      });
+    } else if(data.email === '' || !data.email) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.required_field('email')));
+      res.status(statusCodes.user_error).json({
+        message: errorMessages.required_field_tr.email,
+        actual_message: errorMessages.required_field('email')
+      });
+    } else if(data.password === '' || !data.password) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.required_field('password')));
+      res.status(statusCodes.user_error).json({
+        message: errorMessages.required_field_tr.password,
+        actual_message: errorMessages.required_field('password')
+      });
+    } else {
+      const clientsByEmail = await Client.find({ email: data.email });
+      if (clientsByEmail.length > 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, `User with email [${ data.email }] already exists.`));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.user_exist_email_tr,
+          actual_message: `User with email [${ data.email }] already exists.`
         });
-      })
-	}
+      } else {
+        data['password'] = bcrypt.hashSync(req.body.password, 10);
+        data['first_password'] = req.body.password;
+
+        await Client.insertMany(data);
+        const newClient = await Client.find({ email: data.email });
+
+        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+        res.status(statusCodes.success).json({
+          message: successMessages.client_created_tr,
+          actual_message: 'Client has been created.',
+          client: generateClient(newClient[0])
+        });
+      }
+    }
+  } catch (error) {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+    res.status(statusCodes.server_error).json({
+      message: errorMessages.internal_tr,
+      actual_message: errorMessages.internal,
+      error: error
+    });
+  }
 }
 
-exports.edit = (req, res) => {
+exports.edit = async(req, res) => {
   const id = req.params.id;
 		
   const token = req.headers.authorization;
   const loggedInUser = parseJwt(token);
 
   if(id) {
-    Client.find({ _id: id, active: true })
-      .then(clients => {
-        if(clients.length === 0) {
-					res.status(statusCodes.user_error).json({
-						message: errorMessages.client_not_exist_tr,
-						actual_message: errorMessages.not_exist('Clients', id)
-					});
-        } else {
-          const data = { 
-            ...req.body,
-              
-            modified_date: generateDate(),
-            modified_time: generateTime(),
-            modified_by: loggedInUser,
-            modified_by_id: loggedInUser.id
-          };
-
-          Client.updateOne(
-            { _id: id },
-            { ...data }
-          )
-            .then(_ => {
-              Client.find({ _id: id })
-                .then(newClient => {
-                  res.status(statusCodes.success).json({
-                    message: successMessages.client_updated_tr,
-                    actual_message: successMessages.document_updated(id),
-                    client: generateClient(newClient[0])
-                  });
-                })
-                .catch(error => {
-                  if(error.kind === ErrorKind.ID) {
-                    res.status(statusCodes.user_error).json({
-                      message: errorMessages.invalid_id_tr,
-                      actual_message: errorMessages.invalid_id(id)
-                    });
-                  } else {
-                    res.status(statusCodes.server_error).json({
-                      message: errorMessages.internal_tr,
-                      actual_message: errorMessages.internal,
-                      error: error
-                    });
-                  }
-                })
-            })
-            .catch(error => {
-              if(error.kind === ErrorKind.ID) {
-                res.status(statusCodes.user_error).json({
-                  message: errorMessages.invalid_id_tr,
-                  actual_message: errorMessages.invalid_id(id)
-                });
-              } else {
-                res.status(statusCodes.server_error).json({
-                  message: errorMessages.internal_tr,
-                  actual_message: errorMessages.internal,
-                  error: error
-                });
-              }
-            })
-        }
-      })
-      .catch(error => {
-        if(error.kind === ErrorKind.ID) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.invalid_id_tr,
-            actual_message: errorMessages.invalid_id(id)
-          });
-        } else {
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error: error
-          });
-        }
-      })
+    try {
+      const clients = await Client.find({ _id: id, active: true });
+      if (clients.length === 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.client_not_exist_tr,
+          actual_message: errorMessages.not_exist('Clients', id)
+        });
+      } else {
+        const data = { 
+          ...req.body,
+            
+          modified_date: generateDate(),
+          modified_time: generateTime(),
+          modified_by: loggedInUser,
+          modified_by_id: loggedInUser.id
+        };
+  
+        await Client.updateOne({ _id: id, data });
+        const updatedClient = await Client.findById(id);
+  
+        res.status(statusCodes.success).json({
+          message: successMessages.client_updated_tr,
+          actual_message: successMessages.document_updated(id),
+          client: generateClient(updatedClient)
+        });
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal_tr,
+          actual_message: errorMessages.internal,
+          error: error
+        });
+      }
+    }
   } else {
-    res.status(statusCodes.user_error).json({
-      message: errorMessages.id_missing_tr,
-      actual_message: errorMessages.id_missing
-    });
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
+		res.status(statusCodes.user_error).json({
+			message: errorMessages.id_missing_tr,
+			actual_message: errorMessages.id_missing
+		});
   }
 }
 

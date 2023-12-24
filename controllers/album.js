@@ -297,7 +297,7 @@ exports.addNew = async (req, res) => {
         selected_images_count: 0,
 
         created_date: generateDate(),
-        created_by: JSON.stringify(generateCleanModel(loggedInUser)),
+        created_by: generateCleanModel(loggedInUser),
         created_by_id: loggedInUser.id,
 
         active: true
@@ -392,7 +392,7 @@ exports.edit = async (req, res) => {
             });
         } else {
             if (req.body.assigned_to_id) {
-                const clients = await clients.find({ _id: req.body.assigned_to_id });
+                const clients = await Client.find({ _id: req.body.assigned_to_id });
                 if (clients.length === 0) {
                     await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Client', req.body.assigned_to_id)));
                     res.status(statusCodes.user_error).json({
