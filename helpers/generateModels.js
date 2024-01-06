@@ -230,7 +230,7 @@ exports.generateConf = (conf) => {
     main_title_tr: conf.main_title_tr,
     second_title: conf.second_title,
     second_title_tr: conf.second_title_tr,
-    promo_video: conf.promo_video,
+    promo_videos: conf.promo_videos,
     contact_form_label: null, // will be completely removed in the feature
     phone_number: conf.phone_number,
     email: conf.email,

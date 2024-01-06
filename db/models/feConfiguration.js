@@ -29,8 +29,8 @@ const feConfiguration = new Schema({
     promo_images: {
         type: String
     },
-    promo_video: {
-        type: String
+    promo_videos: {
+        type: Array
     },
     contact_form_label: {
         type: String
