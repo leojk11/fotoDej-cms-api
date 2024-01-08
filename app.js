@@ -6,7 +6,9 @@ const fileUpload = require('express-fileupload');
 require('dotenv').config();
 
 const mainRouter = require('./main-router/main-router');
+
 const { errorHandler } = require('./middlewares/common');
+const { initConfiguration } = require('./helpers/initializeConfiguration');
 
 const mongo = require('./db/mongo');
 const connectToMongoDb = async() => {
@@ -16,11 +18,12 @@ const connectToMongoDb = async() => {
             const port = process.env.PORT || 5000;
             app.listen(port, () => {
                 console.log(`APP IS LISTENING TO PORT ${ port }!!`);
+                initConfiguration();
             });
         } catch (error) {
             console.log('CONNECTION TO DB FAILED', error);
         }
-    })
+    });
 }
 
 const app = express();
