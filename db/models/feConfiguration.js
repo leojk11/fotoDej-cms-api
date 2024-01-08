@@ -50,7 +50,39 @@ const feConfiguration = new Schema({
     },
     insta_link: {
         type: String
-    }
+    },
+
+    // invite part
+    invite_from: {
+        type: String
+    },
+    invite_subject: {
+        type: String
+    },
+    invite_credentials_message: {
+        type: String
+    },
+    invite_credentials_email_label: {
+        type: String
+    },
+    invite_credentials_password_label: {
+        type: String
+    },
+    invite_login_message: {
+        type: String
+    },
+    invite_thank_you_message: {
+        type: String
+    },
+    invite_phone_number_icon: {
+        type: String
+    },
+    invite_email_icon: {
+        type: String
+    },
+    invite_location_icon: {
+        type: String
+    },
 });
 
 const FeConfiguration = mongoose.model('FeConfiguration', feConfiguration);

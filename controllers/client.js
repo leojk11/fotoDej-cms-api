@@ -2,6 +2,7 @@ const Client = require('../db/models/client');
 const Invite = require('../db/models/invite');
 const ClientLog = require('../db/models/clientLog');
 const Logger = require('../db/models/logger');
+const FeConfiguration = require('../db/models/feConfiguration');
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
@@ -323,74 +324,65 @@ exports.edit = async(req, res) => {
   }
 }
 
-exports.changeProfileImage = (req, res) => {
+exports.changeProfileImage = async(req, res) => {
+  const token = req.headers.authorization;
+  const loggedInUser = parseJwt(token);
+
   const path = './images/profile_images/';
 
   const _id = req.params.id;
   const image = req.files.image;
 
   if (_id) {
-    Client.find({ _id })
-      .then(clients => {
-        if (clients.length === 0) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.client_not_exist_tr,
-            actual_message: errorMessages.not_exist('Clients', id)
-          });
-        } else {
-          const client = clients[0];
+    try {
+      const clients = await Client.find({ _id });
+      if (clients.length === 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', _id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.client_not_exist_tr,
+          actual_message: errorMessages.not_exist('Clients', _id)
+        });
+      } else {
+        const client = clients[0];
 
-          if (client.profile_image) {
-            fs.unlinkSync(path + client.profile_image);
-          }
-
-          const newFileName = clients[0]._id + '_' + image.name;
-          image.mv(path + newFileName);
-
-            Client.updateOne(
-              { _id },
-              { profile_image: newFileName }
-            )
-            .then(() => {
-              client.profile_image = newFileName;
-
-              res.status(statusCodes.success).json({
-                message: successMessages.client_profile_image_changed_tr,
-                actual_message: 'Image has been changed.',
-                client: generateCleanModel(client)
-              });
-            })
-            .catch(error => {
-              if(error.kind === ErrorKind.ID) {
-                res.status(statusCodes.user_error).json({
-                  message: errorMessages.invalid_id_tr,
-                  actual_message: errorMessages.invalid_id(id)
-                });
-              } else {
-                res.status(statusCodes.server_error).json({
-                  message: errorMessages.internal_tr,
-                  actual_message: errorMessages.internal,
-                  error: error
-                });
-              }
-            })
+        if (client.profile_image) {
+          fs.unlinkSync(path + client.profile_image);
         }
-      })
-      .catch(error => {
-        if(error.kind === ErrorKind.ID) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.invalid_id_tr,
-            actual_message: errorMessages.invalid_id(id)
-          });
-        } else {
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error: error
-          });
-        }
-      })
+
+        const newFileName = client._id + '_' + image.name;
+        image.mv(path + newFileName);
+
+        await Client.updateOne(
+          { _id },
+          { profile_image: newFileName }
+        );
+        client.profile_image = newFileName;
+
+        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+        res.status(statusCodes.success).json({
+          message: successMessages.client_profile_image_changed_tr,
+          actual_message: successMessages.client_profile_image_changed,
+          client: generateCleanModel(client)
+        });
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(_id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(_id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal_tr,
+          actual_message: errorMessages.internal,
+          error: error
+        });
+      }
+    }
   } else {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
     res.status(statusCodes.user_error).json({
       message: errorMessages.id_missing_tr,
       actual_message: errorMessages.id_missing
@@ -398,75 +390,70 @@ exports.changeProfileImage = (req, res) => {
   }
 }
 
-exports.changeAccoutStatus = (req, res) => {
+exports.changeAccoutStatus = async(req, res) => {
+  const token = req.headers.authorization;
+  const loggedInUser = parseJwt(token);
+
   const _id = req.params.id;
   const status = req.params.status;
 
-  const availableStatuses = [];
-
-  for (const [key] of Object.entries(AccountStatus)) {
-    availableStatuses.push(key);
-  }
-
-  if (_id) {  
-    if (status !== AccountStatus.ACTIVE && status !== AccountStatus.SUSPENDED) {
-      res.status(statusCodes.user_error).json({
-        message: errorMessages.status_not_exist_tr,
-        actual_message: errorMessages.status_not_exist
-      });
-    } else {
-      Client.find({ _id })
-        .then(clients => {
-          if (clients.length === 0) {
+  if (_id) {
+    try {
+      if (status !== AccountStatus.ACTIVE && status !== AccountStatus.SUSPENDED) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.status_not_exist));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.status_not_exist_tr,
+          actual_message: errorMessages.status_not_exist
+        });
+      } else {
+        const clients = await Client.find({ _id });
+        if (clients.length === 0) {
+          await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', _id)));
+          res.status(statusCodes.user_error).json({
+            message: errorMessages.client_not_exist_tr,
+            actual_message: errorMessages.not_exist('Clients', _id)
+          });
+        } else {
+          if (clients[0].account_status === AccountStatus.SUSPENDED && status === AccountStatus.SUSPENDED) {
             res.status(statusCodes.user_error).json({
-              message: errorMessages.client_not_exist_tr,
-              actual_message: errorMessages.not_exist('Clients', id)
+              message: `Account status ${ AccountStatus.SUSPENDED } can only be changed to ${ AccountStatus.ACTIVE }`
+            });
+          } else if (clients[0].account_status === AccountStatus.ACTIVE && status === AccountStatus.ACTIVE) {
+            res.status(statusCodes.user_error).json({
+              message: `Account status ${ AccountStatus.ACTIVE } can only be changed to ${ AccountStatus.SUSPENDED }`
             });
           } else {
-            if (clients[0].account_status === AccountStatus.SUSPENDED && status === AccountStatus.SUSPENDED) {
-              res.status(statusCodes.user_error).json({
-                message: `Account status ${ AccountStatus.SUSPENDED } can only be changed to ${ AccountStatus.ACTIVE }`
-              });
-            } else if (clients[0].account_status === AccountStatus.ACTIVE && status === AccountStatus.ACTIVE) {
-              res.status(statusCodes.user_error).json({
-                message: `Account status ${ AccountStatus.ACTIVE } can only be changed to ${ AccountStatus.SUSPENDED }`
-              });
-            } else {
-              Client.updateOne(
-                { _id },
-                { account_status: status }
-              )
-              .then(() => {
-                res.status(statusCodes.success).json({
-                  message: `Account status has been updated to ${ status }`
-                });
-              })
-              .catch(() => {
-                res.status(statusCodes.server_error).json({
-                  message: errorMessages.internal_tr,
-                  actual_message: errorMessages.internal,
-                  error: error
-                });
-              })
-            }
-          }
-        })
-        .catch(error => {
-          if(error.kind === ErrorKind.ID) {
-            res.status(statusCodes.user_error).json({
-              message: errorMessages.invalid_id_tr,
-              actual_message: errorMessages.invalid_id(id)
-            });
-          } else {
-            res.status(statusCodes.server_error).json({
-              message: errorMessages.internal_tr,
-              actual_message: errorMessages.internal,
-              error: error
+            await Client.updateOne(
+              { _id },
+              { account_status: status }
+            );
+            const updatedClient = await Client.find({ _id });
+
+            res.status(statusCodes.success).json({
+              message: `Account status has been updated to ${ status }`,
+              client: generateCleanModel(updatedClient[0])
             });
           }
-        })
+        }
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(_id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(_id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal_tr,
+          actual_message: errorMessages.internal,
+          error: error
+        });
+      }
     }
   } else {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
     res.status(statusCodes.user_error).json({
       message: errorMessages.id_missing_tr,
       actual_message: errorMessages.id_missing
@@ -474,7 +461,10 @@ exports.changeAccoutStatus = (req, res) => {
   }
 }
 
-exports.resetFirstPassword = (req, res) => {
+exports.resetFirstPassword = async(req, res) => {
+  const token = req.headers.authorization;
+  const loggedInUser = parseJwt(token);
+
   const _id = req.params.id;
   const data = {
     first_password: req.body.first_password,
@@ -483,182 +473,89 @@ exports.resetFirstPassword = (req, res) => {
   };
 
   if (_id) {
-    Client.find({ _id })
-      .then(clients => {
-        if (clients.length === 0) {
+    try {
+      const clients = await Client.find({ _id });
+      if (clients.length === 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', _id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.client_not_exist_tr,
+          actual_message: errorMessages.not_exist('Clients', _id)
+        });
+      } else {
+        if (data.first_password !== clients[0].first_password) {
+          await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.password_not_correct));
           res.status(statusCodes.user_error).json({
-            message: errorMessages.client_not_exist_tr,
-            actual_message: errorMessages.not_exist('Clients', id)
+            message: errorMessages.password_not_correct_tr,
+            actual_message: errorMessages.password_not_correct
           });
         } else {
-          if (data.first_password === clients[0].first_password) {
-            if (data.password === data.rePassword) {
-              const newPassword = bcrypt.hashSync(data.password, 10);
-
-              Client.updateOne(
-                { _id },
-                { password: newPassword, first_password: null }
-              )
-              .then(_ => {
-                const token = jwt.sign(
-                  { ...generateCleanModel(clients[0]) }, 
-                  process.env.SECRET,
-                  { expiresIn: '1h' }
-                );
-
-                Invite.find(
-                  { invited_client_id: clients[0]._id, status: InviteStatus.SUCCESSFULL },
-                  { status: InviteStatus.ACCEPTED }
-                )
-                .then(() => {
-                  const logData = {
-                    action: ClientLogAction.ACTIVATE_ACCOUNT,
-                    client_id: clients[0]._id,
-                    client: generateCleanModel(clients[0]),
-                    date: generateDate(),
-                    time: generateTime()
-                  };
-  
-                  ClientLog.insertMany(logData)
-                    .then(async() => {
-                      await insertNotificaton(
-                        NotificationType.ACCEPTED_INVITATION, 
-                        generateCleanModel(clients[0]), 
-                        new Date(), null, null
-                      );
-
-                      res.status(statusCodes.success).json({
-                        message: successMessages.logged_in_successfully_tr,
-                        actual_message: 'Logged in successfully',
-                        token,
-                        user: generateCleanModel(clients[0])
-                      });
-                    })
-                    .catch(error => {
-                      res.status(statusCodes.server_error).json({
-                        message: errorMessages.internal_tr,
-                        actual_message: errorMessages.internal,
-                        error: error
-                      });
-                    })
-                })
-                .catch(error => {
-                  res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal_tr,
-                    actual_message: errorMessages.internal,
-                    error: error
-                  });
-                })
-              })
-              .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                  res.status(statusCodes.user_error).json({
-                    message: errorMessages.invalid_id_tr,
-                    actual_message: errorMessages.invalid_id(_id)
-                  });
-                } else {
-                  res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal_tr,
-                    actual_message: errorMessages.internal,
-                    error: error
-                  });
-                }
-              })
-            } else {
-              res.status(statusCodes.user_error).json({
-                message: errorMessages.passwords_not_match,
-                actual_message: 'Passwords do not match'
-              });
-            }
-          } else {
+          if (data.password !== data.rePassword) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.passwords_not_match));
             res.status(statusCodes.user_error).json({
-              message: errorMessages.password_not_correct_tr,
-              actual_message: errorMessages.password_not_correct
+              message: errorMessages.passwords_not_match_tr,
+              actual_message: errorMessages.passwords_not_match
             });
-          }
-        }
-      })
-      .catch(error => {
-        if(error.kind === ErrorKind.ID) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.invalid_id_tr,
-            actual_message: errorMessages.invalid_id(_id)
-          });
-        } else {
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error: error
-          });
-        }
-      })
-  } else {
-    res.status(statusCodes.user_error).json({
-      message: errorMessages.id_missing_tr,
-      actual_message: errorMessages.id_missing
-    });
-  }
-}
+          } else {
+            const newPassword = bcrypt.hashSync(data.password, 10);
+            await Client.updateOne(
+              { _id },
+              { password: newPassword, first_password: null }
+            );
 
-exports.softDelete = (req, res) => {
-  const id = req.params.id;
+            await Invite.find(
+              { invited_client_id: clients[0]._id, status: InviteStatus.SUCCESSFULL },
+              { status: InviteStatus.ACCEPTED }
+            );
 
-  const token = req.headers.authorization;
-  const loggedInUser = parseJwt(token);
+            const token = jwt.sign(
+              { ...generateCleanModel(clients[0]) }, 
+              process.env.SECRET,
+              { expiresIn: '1h' }
+            );
 
-  if(id) {
-    Client.find({ _id: id })
-      .then(clients => {
-        if(clients.length === 0) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.client_not_exist_tr,
-            actual_message: errorMessages.not_exist('Clients', id)
-          });
-        } else {
-          Client.updateOne(
-            { _id: id },
-            { 
-              active: false,
-              deleted_by: JSON.stringify(generateCleanModel(loggedInUser))
-            }
-          )
-          .then(_ => {
+            const logData = {
+              action: ClientLogAction.ACTIVATE_ACCOUNT,
+              client_id: clients[0]._id,
+              client: generateCleanModel(clients[0]),
+              date: generateDate(),
+              time: generateTime()
+            };
+            await ClientLog.insertMany(logData);
+
+            await insertNotificaton(
+              NotificationType.ACCEPTED_INVITATION, 
+              generateCleanModel(clients[0]), 
+              new Date(), null, null
+            );
+            
+            await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
             res.status(statusCodes.success).json({
-              message: successMessages.client_deleted_tr,
-              actual_message: successMessages.document_updated(id),
+              message: successMessages.logged_in_successfully_tr,
+              actual_message: 'Logged in successfully',
+              token,
+              user: generateCleanModel(clients[0])
             });
-          })
-          .catch(error => {
-            if(error.kind === ErrorKind.ID) {
-              res.status(statusCodes.user_error).json({
-                message: errorMessages.invalid_id_tr,
-                actual_message: errorMessages.invalid_id(id)
-              });
-            } else {
-              res.status(statusCodes.server_error).json({
-                message: errorMessages.internal_tr,
-                actual_message: errorMessages.internal,
-                error: error
-              });
-            }
-          });
+          }
         }
-      })
-      .catch(error => {
-        if(error.kind === ErrorKind.ID) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.invalid_id_tr,
-            actual_message: errorMessages.invalid_id(id)
-          });
-        } else {
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error: error
-          });
-        }
-      })
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(_id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(_id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal_tr,
+          actual_message: errorMessages.internal,
+          error: error
+        });
+      }
+    }
   } else {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
     res.status(statusCodes.user_error).json({
       message: errorMessages.id_missing_tr,
       actual_message: errorMessages.id_missing
@@ -666,70 +563,54 @@ exports.softDelete = (req, res) => {
   }
 }
 
-exports.recover = (req, res) => {
-  const id = req.params.id;
+exports.softDelete = async(req, res) => {
+  const _id = req.params.id;
 
   const token = req.headers.authorization;
   const loggedInUser = parseJwt(token);
 
-  if(id) {
-    Client.find({ _id: id })
-      .then(clients => {
-        if(clients.length === 0) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.client_not_exist_tr,
-            actual_message: errorMessages.not_exist('Clients', id)
-          });
-        } else {
-          if(clients[0].active) {
-            res.status(statusCodes.user_error).json({
-              message: errorMessages.client_already_active_tr,
-              actual_message: errorMessages.client_already_active
-            });
-          } else {
-              Client.updateOne(
-                { _id: id },
-                { active: true }
-              )
-              .then(_ => {
-                res.status(statusCodes.success).json({
-                  message: successMessages.client_recovered_tr,
-                  actual_message: successMessages.document_updated(id),
-                  user: generateClient(clients[0])
-                });
-              })
-              .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                  res.status(statusCodes.user_error).json({
-                    message: errorMessages.invalid_id_tr,
-                    actual_message: errorMessages.invalid_id(id)
-                  });
-                } else {
-                  res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal_tr,
-                    actual_message: errorMessages.internal,
-                    error: error
-                  });
-                }
-              });
+  if(_id) {
+    try {
+      const clients = await Client.find({ _id });
+      if (clients.length === 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', _id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.client_not_exist_tr,
+          actual_message: errorMessages.not_exist('Clients', _id)
+        });
+      } else {
+        await Client.updateOne(
+          { _id: id },
+          { 
+            active: false,
+            deleted_by: JSON.stringify(generateCleanModel(loggedInUser))
           }
-        }
-      })
-      .catch(error => {
-        if(error.kind === ErrorKind.ID) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.invalid_id_tr,
-            actual_message: errorMessages.invalid_id(id)
-          });
-        } else {
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error: error
-          });
-        }
-      })
+        );
+
+        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+        res.status(statusCodes.success).json({
+          message: successMessages.client_deleted_tr,
+          actual_message: successMessages.document_updated(id),
+        });
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(_id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(_id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal_tr,
+          actual_message: errorMessages.internal,
+          error: error
+        });
+      }
+    }
   } else {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
     res.status(statusCodes.user_error).json({
       message: errorMessages.id_missing_tr,
       actual_message: errorMessages.id_missing
@@ -737,67 +618,118 @@ exports.recover = (req, res) => {
   }
 }
 
-exports.delete = (req, res) => {
+exports.recover = async(req, res) => {
+  const _id = req.params.id;
+
+  const token = req.headers.authorization;
+  const loggedInUser = parseJwt(token);
+
+  if(_id) {
+    try {
+      const clients = await Client.find({ _id });
+      if (clients.length === 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', _id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.client_not_exist_tr,
+          actual_message: errorMessages.not_exist('Clients', id)
+        });
+      } else {
+        if(clients[0].active) {
+          await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.client_already_active));
+          res.status(statusCodes.user_error).json({
+            message: errorMessages.client_already_active_tr,
+            actual_message: errorMessages.client_already_active
+          });
+        } else {
+          await Client.updateOne(
+            { _id: id },
+            { active: true }
+          );
+
+          await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+          res.status(statusCodes.success).json({
+            message: successMessages.client_recovered_tr,
+            actual_message: successMessages.document_updated(id),
+            user: generateClient(clients[0])
+          });
+        }
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(_id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(_id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal_tr,
+          actual_message: errorMessages.internal,
+          error: error
+        });
+      }
+    }
+  } else {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
+    res.status(statusCodes.user_error).json({
+      message: errorMessages.id_missing_tr,
+      actual_message: errorMessages.id_missing
+    });
+  }
+}
+
+exports.delete = async(req, res) => {
 
   const token = req.headers.authorization;
   const loggedInUser = parseJwt(token);
 
   if (loggedInUser.role !== AdminRole.SUPER_ADMIN) {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.no_permission));
     res.status(statusCodes.user_error).json({
       message: errorMessages.no_permission_tr,
       actual_message: errorMessages.no_permission,
       rolesAllowed: AdminRole.SUPER_ADMIN
     });
   } else {
-    const id = req.params.id;
+    const _id = req.params.id;
   
-    if(id) {
-      Client.find({ _id: id })
-        .then(clients => {
-          if(clients.length === 0) {
-            res.status(statusCodes.user_error).json({
-              message: errorMessages.client_not_exist_tr,
-              actual_message: errorMessages.not_exist('Clients', id)
-            });
-          } else {
-            Client.deleteOne({ _id: id })
-              .then(_ => {
-                res.status(statusCodes.success).json({
-                  message: successMessages.client_deleted_permanently_tr,
-                  actual_message: successMessages.document_deleted(id),
-                });
-              })
-              .catch(error => {
-                if(error.kind === ErrorKind.ID) {
-                  res.status(statusCodes.user_error).json({
-                    message: errorMessages.invalid_id_tr,
-                    actual_message: errorMessages.invalid_id(id)
-                  });
-                } else {
-                  res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal_tr,
-                    actual_message: errorMessages.internal,
-                    error: error
-                  });
-                }
-              })
-          }
-        })
-        .catch(error => {
-          if(error.kind === ErrorKind.ID) {
-            res.status(statusCodes.user_error).json({
-              message: errorMessages.invalid_id_tr,
-              actual_message: errorMessages.invalid_id(id)
-            });
-          } else {
-            res.status(statusCodes.server_error).json({
-              message: errorMessages.internal_tr,
-              actual_message: errorMessages.internal,
-              error: error
-            });
-          }
-        })
+    if(_id) {
+      try {
+        const clients = await Client.find({ _id });
+        if (clients.length === 0) {
+          await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', _id)));
+          res.status(statusCodes.user_error).json({
+            message: errorMessages.client_not_exist_tr,
+            actual_message: errorMessages.not_exist('Clients', _id)
+          });
+        } else {
+          await Client.deleteOne({ _id });
+
+          await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+          res.status(statusCodes.success).json({
+            message: successMessages.client_deleted_permanently_tr,
+            actual_message: successMessages.document_deleted(id),
+          });
+        }
+      } catch (error) {
+        if(error.kind === ErrorKind.ID) {
+          await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(_id)));
+          res.status(statusCodes.user_error).json({
+            message: errorMessages.invalid_id_tr,
+            actual_message: errorMessages.invalid_id(_id)
+          });
+        } else {
+          await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+          res.status(statusCodes.server_error).json({
+            message: errorMessages.internal_tr,
+            actual_message: errorMessages.internal,
+            error: error
+          });
+        }
+      }
     } else {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
       res.status(statusCodes.user_error).json({
         message: errorMessages.id_missing_tr,
         actual_message: errorMessages.id_missing
@@ -814,58 +746,69 @@ exports.invite = async(req, res) => {
   const loggedInUser = parseJwt(token);
 
   if (id) {
-    Client.find({ _id: id })
-      .then(clients => {
-        if (clients.length === 0) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.client_not_exist_tr,
-            actual_message: errorMessages.not_exist('Clients', id)
-          });
+    try {
+      const clients = await Client.find({ _id: id });
+      if (clients.length === 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.client_not_exist_tr,
+          actual_message: errorMessages.not_exist('Clients', id)
+        });
+      } else {
+        // req.headers.host
+        let protocol = null;
+        if (req.headers.host.includes('localhost')) {
+          protocol = 'http';
         } else {
-          const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-              user: process.env.EMAIL,
-              pass: process.env.EMAIL_PASSWORD
-            }
-          });
+          protocol = 'https';
+        }
+        
+        const configuration = await FeConfiguration.find();
 
-          const mailOptions = {
-            from: 'FotoDej',
-            subject: 'Invite!',
-            html: `
-              <body style="margin: 0px;">
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL,
+            pass: process.env.EMAIL_PASSWORD
+          }
+        });
+  
+        const mailOptions = {
+          from: configuration[0].invite_from,
+          subject: configuration[0].invite_subject,
+          html: `
+            <body style="margin: 0px;">
               <div style="max-width: 650px; width: 100%; background-color: #ffffff; padding: 50px; font-family: Open Sans, sans-serif; color: #25476a; font-size: 24px; overflow: hidden;">
                 <div>
                   <img 
                     style="width: 120px; height: auto;"
-                    src="https://drive.google.com/uc?export=view&id=1bM3l5yEi1OpSUgl5TIKCLlz6bbERacXd">
+                    src="${ protocol }://${ req.headers.host }/images/${ configuration[0].logo }">
                 </div>
-          
+            
                 <div style="position: relative; z-index: 2;">
                   <p style="line-height: 91%; margin-top: 50px; margin-bottom: 45px;">
                     Здраво <span style="font-weight: bold;">${ clients[0].firstname } ${ clients[0].lastname }</span>,
                   </p>
                   <p style="max-width: 300px; line-height: 100%; margin-bottom: 13px;">
-                    Ова се вашите податоци за најава:
+                    ${ configuration[0].invite_credentials_message }
                   </p>
                   <div style="line-height: 130%; margin-bottom: 70px;">
                     <p>
-                      <span style="font-size: 24px; opacity: 0.7; margin-right: 11px;">емаил:</span>
-                      <span style="font-weight: bold; color: #25476a;">${ email ? email : clients[0].email }</span>
+                      <span style="font-size: 24px; opacity: 0.7; margin-right: 11px;">${ configuration[0].invite_credentials_email_label }:</span>
+                      <span style="font-weight: bold; color: #25476a;">${ clients[0].email }</span>
                     </p>
                     <p>
-                      <span style="font-size: 24px; opacity: 0.7; margin-right: 11px;">лозинка:</span>
+                      <span style="font-size: 24px; opacity: 0.7; margin-right: 11px;">${ configuration[0].invite_credentials_password_label }:</span>
                       <span style="font-weight: bold;">${ clients[0].first_password }</span>
                     </p>
                   </div>
                   <p style="max-width: 372px; line-height: 100%;">
-                    Кликнете на следниот линк за да се упатите кон најава
+                    ${ configuration[0].invite_login_message }
                   </p>
                   <a style="background-color: #25476a; width: 197px; height: 44px; border-radius: 10px; box-shadow: 2px 2px 7px -1px rgba(68, 68, 68, 0.3); padding: 0; color: #ffffff; text-decoration: none; line-height: 30px; font-weight: 600; font-size: 20px; margin-top: 23px; transition: 0.3s ease-in-out; padding: 10px 60px;" 
                     href="${ req.headers.origin }"> Најава </a>
                   <p style="font-weight: 600; line-height: 91%; font-size: 15px; margin-top: 75px; margin-bottom: 30px;">
-                    Ви благодариме на довербата!</p>
+                    ${ configuration[0].invite_thank_you_message }</p>
                 </div>
                 <div style="width: 100%; z-index: 2;">
                   <div style="float: left; display: inline-block; clear: both;">
@@ -873,146 +816,107 @@ exports.invite = async(req, res) => {
                       onMouseOver="this.style.opacity='0.7'"
                       onMouseOut="this.style.opacity='1'">
                       <div style="font-size: 14px; margin-right: 15px;">
-                        <img src="https://drive.google.com/uc?export=view&id=1QE_s0Khk1nfkSBwLa-hUnypWd7LB6fJp">
+                        <img src="${ protocol }://${ req.headers.host }/images/${ configuration[0].invite_phone_number_icon }">
                       </div>
                       <a style="font-size: 13px; color: #25476a; text-decoration: none; font-weight: 600; line-height: 18px;" 
-                        href="tel: 077 123 123">077 123 123</a>
+                        href="tel:${ configuration[0].phone_number }">${ configuration[0].phone_number }</a>
                     </div>
-          
+            
                     <div style="display: flex; align-items: center; margin-bottom: 4px; transition: 0.3s ease-in-out; cursor: pointer;"
                       onMouseOver="this.style.opacity='0.7'"
                       onMouseOut="this.style.opacity='1'">
                       <div style="font-size: 14px; margin-right: 15px;">
-                        <img src="https://drive.google.com/uc?export=view&id=1sS7AZ3sBTeglrvubtEGCCCeqL3-zeJOu">
+                        <img src="${ protocol }://${ req.headers.host }/images/${ configuration[0].invite_email_icon }">
                       </div>
                       <a style="font-size: 13px; color: #25476a; text-decoration: none; font-weight: 600; line-height: 18px;"
-                        href="mailto:fotodej@gmail.com">fotodej@gmail.com</a>
+                        href="mailto:${ configuration[0].email }">${ configuration[0].email }</a>
                     </div>
-          
+            
                     <div style="display: flex; align-items: center; margin-bottom: 4px; transition: 0.3s ease-in-out; cursor: pointer;"
                       onMouseOver="this.style.opacity='0.7'"
                       onMouseOut="this.style.opacity='1'">
                       <div style="font-size: 14px; margin-right: 15px;">
-                        <img src="https://drive.google.com/uc?export=view&id=11owzBfMBXrHX0j4otpIlARg46zxp0DAs">
+                        <img src="${ protocol }://${ req.headers.host }/images/${ configuration[0].invite_location_icon }">
                       </div>
                       <a style="font-size: 13px; color: #25476a; text-decoration: none; font-weight: 600; line-height: 18px;"
-                        href="#">адреса ул. Улица бр.1</a>
+                        href="#">${ configuration[0].address }</a>
                     </div>
                   </div>
-          
+            
                   <div style="float: right; clear: both; display: inline-block;">
                     <img    
                       style="width: 120px;"
-                      src="https://drive.google.com/uc?export=view&id=1bM3l5yEi1OpSUgl5TIKCLlz6bbERacXd">
+                      src="${ protocol }://${ req.headers.host }/images/${ configuration[0].logo }">
                   </div>
                 </div>
               </div>
             </body>
-            `
-          };
+          `
+        };
+  
+        mailOptions['to'] = email ? email : clients[0].email;
 
-          mailOptions['to'] = email ? email : clients[0].email;
+        transporter.sendMail(mailOptions, async (error, info) => {
+          if (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+            res.status(statusCodes.server_error).json({
+              message: errorMessages.email_send_error_tr,
+              actual_message: errorMessages.email_send_error
+            });
+          } else {
+            const invite = {
+              invited_client: generateCleanModel(clients[0]),
+              invited_client_id: clients[0]._id,
 
-          transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-              res.status(statusCodes.server_error).json({
-                message: errorMessages.email_send_error_tr,
-                actual_message: errorMessages.email_send_error
+              invited_by: loggedInUser,
+              invited_by_id: loggedInUser.id,
+
+              status: InviteStatus.SUCCESSFULL,
+
+              date: generateDate(),
+              time: generateTime()
+            };
+
+            const invites = await Invite.find({ invited_client_id: clients[0]._id });
+            if (invites.length > 0) {
+              await Invite.updateOne(
+                { _id: invites[0]._id },
+                { status: InviteStatus.FAILED }
+              );
+              await Invite.insertMany(invite);
+
+              await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+              res.status(statusCodes.success).json({
+                message: successMessages.email_sent_tr,
+                actual_message: successMessages.email_sent
               });
-            } else {
-              const invite = {
-                invited_client: generateCleanModel(clients[0]),
-                invited_client_id: clients[0]._id,
-
-                invited_by: loggedInUser,
-                invited_by_id: loggedInUser.id,
-
-                status: InviteStatus.SUCCESSFULL,
-
-                date: generateDate(),
-                time: generateTime()
-              };
-
-              Invite.find({ invited_client_id: clients[0]._id })
-                .then(invites => {
-                  if (invites.length > 0) {
-                    Invite.updateOne(
-                      { _id: invites[0]._id },
-                      { status: InviteStatus.FAILED }
-                    )
-                    .then(() => {
-                      Invite.insertMany(invite)
-                        .then(() => {
-                          res.status(statusCodes.success).json({
-                            message: successMessages.email_sent_tr,
-                            actual_message: successMessages.email_sent
-                          });
-                        })
-                        .catch(error => {
-                          res.status(statusCodes.server_error).json({
-                            message: errorMessages.internal_tr,
-                            actual_message: errorMessages.internal,
-                            error: error
-                          });
-                        })
-                    })
-                    .catch(error => {
-                      if(error.kind === ErrorKind.ID) {
-                        res.status(statusCodes.user_error).json({
-                          message: errorMessages.invalid_id_tr,
-                          actual_message: errorMessages.invalid_id(id)
-                        });
-                      } else {
-                        res.status(statusCodes.server_error).json({
-                          message: errorMessages.internal_tr,
-                          actual_message: errorMessages.internal,
-                          error: error
-                        });
-                      }
-                    })
-                  } else {
-                    Invite.insertMany(invite)
-                      .then(() => {
-                        res.status(statusCodes.success).json({
-                          message: successMessages.email_sent_tr,
-                          actual_message: successMessages.email_sent
-                        });
-                      })
-                      .catch(error => {
-                        res.status(statusCodes.server_error).json({
-                          message: errorMessages.internal_tr,
-                          actual_message: errorMessages.internal,
-                          error: error
-                        });
-                      })
-                  }
-                })
-                .catch(error => {
-                  res.status(statusCodes.server_error).json({
-                    message: errorMessages.internal_tr,
-                    actual_message: errorMessages.internal,
-                    error: error
-                  });
-                })
             }
-          });
-        }
-      })
-      .catch(error => {
-        if(error.kind === ErrorKind.ID) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.invalid_id_tr,
-            actual_message: errorMessages.invalid_id(id)
-          });
-        } else {
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error: error
-          });
-        }
-      })
+          }
+        });
+
+        // res.status(statusCodes.success).json({
+        //   message: successMessages.email_sent_tr,
+        //   actual_message: successMessages.email_sent
+        // });
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal_tr,
+          actual_message: errorMessages.internal,
+          error: error
+        });
+      }
+    }
   } else {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
     res.status(statusCodes.user_error).json({
       message: errorMessages.id_missing_tr,
       actual_message: errorMessages.id_missing

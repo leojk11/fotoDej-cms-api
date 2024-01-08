@@ -13,6 +13,7 @@ exports.successMessages = {
   client_deleted_tr: 'success.clientDeleted',
   client_deleted_permanently_tr: 'success.clientDeletedPermanently',
   client_recovered_tr: 'success.clientRecovered',
+  client_profile_image_changed: 'Profile image has been updated.',
   client_profile_image_changed_tr: 'success.clientProfileImageChanged',
 
   album_created: 'Album has been created.',

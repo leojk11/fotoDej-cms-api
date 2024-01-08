@@ -9,7 +9,8 @@ exports.errorMessages = {
 
   not_authorized: 'You are not authorized. Plase login!',
   not_authorized_tr: 'errors.notAuthorized',
-  passwords_not_match: 'errors.passwordsNotMatch',
+  passwords_not_match: 'Passwords do not match.',
+  passwords_not_match_tr: 'errors.passwordsNotMatch',
   password_not_correct: 'Entered password is not correct.',
   password_not_correct_tr: 'errors.passwordNotCorrect',
 

@@ -236,7 +236,19 @@ exports.generateConf = (conf) => {
     email: conf.email,
     address: conf.address,
     facebook_link: conf.facebook_link,
-    insta_link: conf.insta_link
+    insta_link: conf.insta_link,
+
+    // invite part
+    invite_from: conf.invite_from,
+    invite_subject: conf.invite_subject,
+    invite_credentials_message: conf.invite_credentials_message,
+    invite_credentials_email_label: conf.invite_credentials_email_label,
+    invite_credentials_password_label: conf.invite_credentials_password_label,
+    invite_login_message: conf.invite_login_message,
+    invite_thank_you_message: conf.invite_thank_you_message,
+    invite_phone_number_icon: conf.invite_phone_number_icon,
+    invite_email_icon: conf.invite_email_icon,
+    invite_location_icon: conf.invite_location_icon
   };
 
   if(conf.promo_images) {
