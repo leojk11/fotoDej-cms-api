@@ -463,6 +463,49 @@ exports.disableImages = async (req, res) => {
     }
 }
 
+exports.deleteSingleImage = async (req, res) => {
+    const token = req.headers.authorization;
+    const loggedInUser = parseJwt(token);
+
+    const image = req.params.image;
+    const path = `./images/`;
+
+    if (image) {
+        try {
+            const images = await Image.find({ name: image })
+            if (images.length === 0) {
+                await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Image', image)));
+                res.status(statusCodes.user_error).json({
+                    message: errorMessages.album_not_exist_tr,
+                    actual_message: errorMessages.not_exist('Image', image)
+                });
+            } else {
+                await Image.deleteOne({ name: image });
+                fs.unlinkSync(path + image);
+                
+                await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+                res.status(statusCodes.success).json({
+                    message: successMessages.image_deleted_tr,
+                    actual_message: successMessages.image_deleted
+                });
+            }
+        } catch (error) {
+            await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+            res.status(statusCodes.server_error).json({
+                message: errorMessages.internal_tr,
+                actual_message: errorMessages.internal,
+                error
+            });
+        }
+    } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
+        res.status(statusCodes.user_error).json({
+            message: errorMessages.id_missing_tr,
+            actual_message: errorMessages.id_missing
+        });
+    }
+}
+
 exports.deleteMultiple = async (req, res) => {
     const token = req.headers.authorization;
     const loggedInUser = parseJwt(token);
