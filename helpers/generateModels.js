@@ -237,6 +237,7 @@ exports.generateConf = (conf) => {
     address: conf.address,
     facebook_link: conf.facebook_link,
     insta_link: conf.insta_link,
+    emails_for_notifications: conf.emails_for_notifications,
 
     // invite part
     invite_from: conf.invite_from,

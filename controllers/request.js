@@ -1,4 +1,5 @@
 const Request = require('../db/models/request');
+const Logger = require('../db/models/logger');
 
 const { generateDate, generateTime } = require('../helpers/timeDate');
 const { generateRequest } = require('../helpers/generateModels');
@@ -10,10 +11,16 @@ const { NotificationType } = require('../enums/notificationType');
 
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
-
 const { successMessages } = require('../helpers/successMessages');
+const { generateSuccessLogger, generateErrorLogger } = require('../helpers/logger');
+const { requestNotification } = require('../helpers/emailNotification');
 
-exports.getAll = (req, res) => {
+const { parseJwt } = require('../middlewares/common');
+
+exports.getAll = async(req, res) => {
+
+  const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
 
   let skip = 0;
   if(parseInt(req.query.page) === 1) {
@@ -41,6 +48,7 @@ exports.getAll = (req, res) => {
   }
   if (req.query.status) {
     if(req.query.status !== RequestStatus.PENDING && req.query.status !== RequestStatus.CONTACTED) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_request_status));
       res.status(statusCodes.user_error).json({
         message: errorMessages.invalid_request_status_tr,
         actual_message: errorMessages.invalid_request_status
@@ -51,46 +59,31 @@ exports.getAll = (req, res) => {
     filters.status = req.query.status;
   }
 
-  Request.find(filters)
-    .sort({ _id: 'desc' })
-    .skip(skip)
-    .limit(parseInt(req.query.take))
-    .then(requests => {
-      Request.find(filters)
-        .count()
-        .then(countRes => {
-            const requestsToSend = [];
+  try {
+    const requests = await Request.find(filters).sort({ _id: 'desc' })
+      .skip(skip).limit(parseInt(req.query.take));
+    const requestsCount = await Request.find(filters).count();
 
-            for(const request of requests) {
-              requestsToSend.push(generateRequest(request));
-            }
-
-            res.status(statusCodes.success).json({
-              page: parseInt(req.query.page),
-              total: countRes,
-              list: requestsToSend
-            });
-        })
-        .catch(error => {
-          console.log(error);
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error
-          });
-        })
-    })
-    .catch(error => {
-      console.log(error);
-      res.status(statusCodes.server_error).json({
-        message: errorMessages.internal_tr,
-        actual_message: errorMessages.internal,
-        error
-      });
-    })
+    await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+    res.status(statusCodes.success).json({
+      page: parseInt(req.query.page),
+      total: requestsCount,
+      list: requests.map(request => generateRequest(request))
+    });
+  } catch (error) {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+    res.status(statusCodes.server_error).json({
+      message: errorMessages.internal_tr,
+      actual_message: errorMessages.internal,
+      error
+    });
+  }
 }
 
-exports.getPending = (req, res) => {
+exports.getPending = async(req, res) => {
+  const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
+
   let skip = 0;
   if(parseInt(req.query.page) === 1) {
     skip = 0;
@@ -98,76 +91,64 @@ exports.getPending = (req, res) => {
     skip = req.query.take;
   }
 
-  Request.find({ status: RequestStatus.PENDING })
-    .sort({ _id: 'desc' })
-    .skip(skip)
-    .limit(parseInt(req.query.take))
-    .then(requests => {
-      Request.find({ status: RequestStatus.PENDING })
-        .count()
-        .then(countRes => {
-            const requestsToSend = [];
+  try {
+    const requests = await Request.find({ status: RequestStatus.PENDING }).sort({ _id: 'desc' })
+      .skip(skip).limit(parseInt(req.query.take));
+    const requestsCount = await Request.find({ status: RequestStatus.PENDING }).count();
 
-            for(const request of requests) {
-              requestsToSend.push(generateRequest(request));
-            }
-
-            res.status(statusCodes.success).json({
-              page: parseInt(req.query.page),
-              total: countRes,
-              list: requestsToSend
-            });
-        })
-        .catch(error => {
-          console.log(error);
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error
-          });
-        })
-    })
-    .catch(error => {
-      console.log(error);
-      res.status(statusCodes.server_error).json({
-        message: errorMessages.internal_tr,
-        actual_message: errorMessages.internal,
-        error
-      });
-    })
+    await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+    res.status(statusCodes.success).json({
+      page: parseInt(req.query.page),
+      total: requestsCount,
+      list: requests.map(request => generateRequest(request))
+    });
+  } catch (error) {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+    res.status(statusCodes.server_error).json({
+      message: errorMessages.internal_tr,
+      actual_message: errorMessages.internal,
+      error
+    });
+  }
 }
 
-exports.getSingle = (req, res) => {
+exports.getSingle = async(req, res) => {
+  const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
+
   const _id = req.params.id;
 
   if (_id) {
-    Request.find({ _id })
-      .then(requests => {
-        if (requests.length === 0) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.request_not_exist_tr,
-            actual_message: errorMessages.not_exist('Request', _id)
-          });
-        } else {
-          res.status(statusCodes.success).send(generateRequest(requests[0]));
-        }
-      })
-      .catch(error => {
-        console.log(error);
-        if(error.kind === ErrorKind.ID) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.invalid_id_tr,
-            actual_message: errorMessages.invalid_id(id)
-          });
-        } else {
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error
-          });
-        }
-      })
+    try {
+      const requests = await Request.find({ _id });
+      if (requests.length === 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Request', _id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.request_not_exist_tr,
+          actual_message: errorMessages.not_exist('Request', _id)
+        });
+      } else {
+        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+        res.status(statusCodes.success).send(generateRequest(requests[0]));
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+        res.status(statusCodes.server_error).json({
+          message: errorMessages.internal_tr,
+          actual_message: errorMessages.internal,
+          error
+        });
+      }
+    }
   } else {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
     res.status(statusCodes.user_error).json({
       message: errorMessages.id_missing_tr,
       actual_message: errorMessages.id_missing
@@ -175,7 +156,10 @@ exports.getSingle = (req, res) => {
   }
 }
 
-exports.addNew = (req, res) => {
+exports.addNew = async(req, res) => {
+  const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
+
   const data = { 
     ...req.body,
 
@@ -201,78 +185,71 @@ exports.addNew = (req, res) => {
       actual_message: errorMessages.required_field('phone number')
     });
   } else {
-    Request.insertMany(data)
-      .then(async () => {
-        await insertNotificaton(NotificationType.REQUEST_SENT, null, new Date(), null, null);
+    try {
+      await Request.insertMany(data);
+      await insertNotificaton(NotificationType.REQUEST_SENT, null, new Date(), null, null);
+      await requestNotification(data, req);
 
-        res.status(statusCodes.success).json({
-          message: successMessages.request_created_tr,
-          actual_message: successMessages.request_created
+      await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+      res.status(statusCodes.success).json({
+        message: successMessages.request_created_tr,
+        actual_message: successMessages.request_created
+      });
+    } catch (error) {
+      await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
+      res.status(statusCodes.server_error).json({
+        message: errorMessages.internal_tr,
+        actual_message: errorMessages.internal,
+        error
+      });
+    }
+  }
+}
+
+exports.markAsContacted = async(req, res) => {
+  const token = req.headers.authorization;
+	const loggedInUser = parseJwt(token);
+
+  const _id = req.params.id;
+
+  if (_id) {
+    try {
+      const requests = await Request.find({ _id });
+      if (requests.length === 0) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Request', _id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.request_not_exist_tr,
+          actual_message: errorMessages.not_exist('Request', _id)
         });
-      })
-      .catch(error => {
+      } else {
+        await Request.updateOne(
+          { _id }, { status: RequestStatus.CONTACTED }
+        );
+
+        await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
+        res.status(statusCodes.success).json({
+          message: successMessages.request_contacted_tr,
+          actual_message: successMessages.request_contacted
+        });
+      }
+    } catch (error) {
+      if(error.kind === ErrorKind.ID) {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(id)));
+        res.status(statusCodes.user_error).json({
+          message: errorMessages.invalid_id_tr,
+          actual_message: errorMessages.invalid_id(id)
+        });
+      } else {
+        await Logger.insertMany(generateErrorLogger(loggedInUser, req, error));
         res.status(statusCodes.server_error).json({
           message: errorMessages.internal_tr,
           actual_message: errorMessages.internal,
           error
         });
-      })
-  }
-}
-
-exports.markAsContacted = (req, res) => {
-  const _id = req.params.id;
-
-  if (_id) {
-    Request.find({ _id })
-      .then(requests => {
-        if (requests.length === 0) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.request_not_exist_tr,
-            actual_message: errorMessages.not_exist('Request', _id)
-          });
-        } else {
-          Request.updateOne(
-            { _id }, { status: RequestStatus.CONTACTED }
-          ).then(() => {
-            res.status(statusCodes.success).json({
-              message: successMessages.request_contacted_tr,
-              actual_message: successMessages.request_contacted
-            });
-          })
-          .catch(error => {
-            console.log(error);
-            if(error.kind === ErrorKind.ID) {
-              res.status(statusCodes.user_error).json({
-                message: errorMessages.invalid_id_tr,
-                actual_message: errorMessages.invalid_id(id)
-              });
-            } else {
-              res.status(statusCodes.server_error).json({
-                message: errorMessages.internal_tr,
-                actual_message: errorMessages.internal,
-                error
-              });
-            }
-          })
-        }
-      })
-      .catch(error => {
-        console.log(error);
-        if(error.kind === ErrorKind.ID) {
-          res.status(statusCodes.user_error).json({
-            message: errorMessages.invalid_id_tr,
-            actual_message: errorMessages.invalid_id(id)
-          });
-        } else {
-          res.status(statusCodes.server_error).json({
-            message: errorMessages.internal_tr,
-            actual_message: errorMessages.internal,
-            error
-          });
-        }
-      })
+      }
+    }
   } else {
+    await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.id_missing));
     res.status(statusCodes.user_error).json({
       message: errorMessages.id_missing_tr,
       actual_message: errorMessages.id_missing

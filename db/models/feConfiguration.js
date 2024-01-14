@@ -52,6 +52,10 @@ const feConfiguration = new Schema({
         type: String
     },
 
+    emails_for_notifications: {
+        type: Array
+    },
+
     // invite part
     invite_from: {
         type: String
