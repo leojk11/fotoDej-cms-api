@@ -24,6 +24,7 @@ const dashboardRoutes = require('../routes/dashboard');
 const clientLogsRoutes = require('../routes/clientLog');
 const notificationsRoutes = require('../routes/notification');
 const loggerRoutes = require('../routes/logger');
+const visitCounterRoutes = require('../routes/visitCounter');
 
 mainRouter.use('/users', userRoutes);
 mainRouter.use('/admin', adminRoutes);
@@ -39,5 +40,6 @@ mainRouter.use('/dashboard', dashboardRoutes);
 mainRouter.use('/client_logs', clientLogsRoutes);
 mainRouter.use('/notifications', notificationsRoutes);
 mainRouter.use('/logger', loggerRoutes);
+mainRouter.use('/visit_counters', visitCounterRoutes);
 
 module.exports = mainRouter;

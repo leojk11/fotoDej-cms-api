@@ -324,3 +324,12 @@ exports.generateNotification = (notification) => {
 
   return newNotification;
 }
+
+exports.generateVistiCounter = (visitCounter) => {
+  const newVisitCounter = {
+    id: visitCounter._id,
+    date: visitCounter.date
+  };
+
+  return newVisitCounter;
+}

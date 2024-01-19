@@ -43,27 +43,6 @@ exports.getImage = async (req, res) => {
     }
 }
 
-exports.getImageBase64 = async (req, res) => {
-    const image = req.params.image;
-    const path = './images/';
-
-    try {
-        const img = fs.readFileSync(path + image);
-        const bufferedImage = Buffer.from(img).toString('base64');
-
-        await Logger.insertMany(generateSuccessLogger(null, req));
-        res.status(statusCodes.success).json({
-            buffer: bufferedImage
-        });
-    } catch (error) {
-        await Logger.insertMany(generateErrorLogger(null, req, error));
-        res.status(statusCodes.user_error).json({
-            message: 'image to 64 error',
-            actual_message: 'image to 64 error'
-        });
-    }
-}
-
 exports.getAlbumImage = async (req, res) => {
     const albumId = req.params.id;
 
@@ -238,10 +217,13 @@ exports.uploadImagesV2 = async (req, res) => {
     } else {
         try {
             const file = req.files.images;
+            const bufferedImage = Buffer.from(file.data).toString('base64');
+
             const imageData = {
                 name: file.name,
                 album_id: albumId,
-                disabled: false
+                disabled: false,
+                bufferData: bufferedImage
             };
 
             await Image.insertMany(imageData);
