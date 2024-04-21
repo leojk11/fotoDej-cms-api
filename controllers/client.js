@@ -580,7 +580,7 @@ exports.softDelete = async(req, res) => {
         });
       } else {
         await Client.updateOne(
-          { _id: id },
+          { _id },
           { 
             active: false,
             deleted_by: JSON.stringify(generateCleanModel(loggedInUser))
@@ -590,7 +590,7 @@ exports.softDelete = async(req, res) => {
         await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
         res.status(statusCodes.success).json({
           message: successMessages.client_deleted_tr,
-          actual_message: successMessages.document_updated(id),
+          actual_message: successMessages.document_updated(_id),
         });
       }
     } catch (error) {
@@ -631,7 +631,7 @@ exports.recover = async(req, res) => {
         await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Clients', _id)));
         res.status(statusCodes.user_error).json({
           message: errorMessages.client_not_exist_tr,
-          actual_message: errorMessages.not_exist('Clients', id)
+          actual_message: errorMessages.not_exist('Clients', _id)
         });
       } else {
         if(clients[0].active) {
@@ -642,14 +642,14 @@ exports.recover = async(req, res) => {
           });
         } else {
           await Client.updateOne(
-            { _id: id },
+            { _id },
             { active: true }
           );
 
           await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
           res.status(statusCodes.success).json({
             message: successMessages.client_recovered_tr,
-            actual_message: successMessages.document_updated(id),
+            actual_message: successMessages.document_updated(_id),
             user: generateClient(clients[0])
           });
         }
@@ -709,7 +709,7 @@ exports.delete = async(req, res) => {
           await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
           res.status(statusCodes.success).json({
             message: successMessages.client_deleted_permanently_tr,
-            actual_message: successMessages.document_deleted(id),
+            actual_message: successMessages.document_deleted(_id),
           });
         }
       } catch (error) {
