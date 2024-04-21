@@ -1,4 +1,5 @@
 exports.LogType = {
   ERROR: 'ERROR',
-  SUCCESS: 'SUCCESS'
+  SUCCESS: 'SUCCESS',
+  CUSTOM_MESSAGE: 'CUSTOM_MESSAGE'
 };

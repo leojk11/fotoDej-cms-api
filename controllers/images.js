@@ -12,7 +12,7 @@ const { successMessages } = require('../helpers/successMessages');
 const { generateTime, generateDate } = require('../helpers/timeDate');
 const { generateImage, generateSelectedImages } = require('../helpers/generateModels');
 const { insertNotificaton } = require('../helpers/notificationTools');
-const { generateSuccessLogger, generateErrorLogger } = require('../helpers/logger');
+const { generateSuccessLogger, generateErrorLogger, generateCustomMessageLogger } = require('../helpers/logger');
 
 const { ClientLogAction } = require('../enums/clientLogAction');
 const { NotificationType } = require('../enums/notificationType');
@@ -452,8 +452,11 @@ exports.deleteSingleImage = async (req, res) => {
     const image = req.params.image;
     const path = `./images/`;
 
+    await Logger.insertMany(generateCustomMessageLogger(loggedInUser, req, 'before if (image)'));
+
     if (image) {
         try {
+            await Logger.insertMany(generateCustomMessageLogger(loggedInUser, req, '459'));
             const images = await Image.find({ name: image })
             if (images.length === 0) {
                 await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Image', image)));
@@ -462,10 +465,11 @@ exports.deleteSingleImage = async (req, res) => {
                     actual_message: errorMessages.not_exist('Image', image)
                 });
             } else {
+                await Logger.insertMany(generateCustomMessageLogger(loggedInUser, req, '468'));
                 await Image.deleteOne({ name: image });
-                await Logger.insertMany(generateSuccessLogger(loggedInUser, 'before fs.unlinkSync(path + image)'));
+                await Logger.insertMany(generateCustomMessageLogger(loggedInUser, req, 'before fs.unlinkSync(path + image)'));
                 fs.unlinkSync(path + image);
-                await Logger.insertMany(generateSuccessLogger(loggedInUser, 'after fs.unlinkSync(path + image)'));
+                await Logger.insertMany(generateCustomMessageLogger(loggedInUser, req, 'after fs.unlinkSync(path + image)'));
                 
                 await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
                 res.status(statusCodes.success).json({
