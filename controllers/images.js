@@ -458,12 +458,14 @@ exports.deleteSingleImage = async (req, res) => {
             if (images.length === 0) {
                 await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.not_exist('Image', image)));
                 res.status(statusCodes.user_error).json({
-                    message: errorMessages.album_not_exist_tr,
+                    message: errorMessages.image_not_exist_tr,
                     actual_message: errorMessages.not_exist('Image', image)
                 });
             } else {
                 await Image.deleteOne({ name: image });
+                await Logger.insertMany(generateSuccessLogger(loggedInUser, 'before fs.unlinkSync(path + image)'));
                 fs.unlinkSync(path + image);
+                await Logger.insertMany(generateSuccessLogger(loggedInUser, 'after fs.unlinkSync(path + image)'));
                 
                 await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
                 res.status(statusCodes.success).json({
