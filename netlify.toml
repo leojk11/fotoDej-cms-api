@@ -2,6 +2,10 @@
   # nothing to build, the API runs as a Netlify Function. `public` only holds a placeholder page
   publish = "public"
 
+[build.environment]
+  # the DB username equals the GitHub username in package.json's repository URLs, which trips the secrets scan
+  SECRETS_SCAN_OMIT_KEYS = "DB_USERNAME,PORT"
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
