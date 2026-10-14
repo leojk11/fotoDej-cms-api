@@ -1,0 +1,9 @@
+[build]
+  # nothing to build, the API runs as a Netlify Function. `public` only holds a placeholder page
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  # native module, must be installed as-is instead of bundled
+  external_node_modules = ["bcrypt"]

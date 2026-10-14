@@ -40,7 +40,7 @@ Create a `.env` file in the project root (it is git-ignored):
 | Variable | Description |
 |---|---|
 | `PORT` | HTTP port. Defaults to `5000`. |
-| `SECRET` | Secret used to sign JWTs and the express-session cookie. |
+| `SECRET` | Secret used to sign JWTs. |
 | `DB_USERNAME`, `DB_PASSWORD`, `DB_CLUSTER` | Build the connection string `mongodb+srv://<user>:<password>@<cluster>.mongodb.net/`. |
 | `EMAIL`, `EMAIL_PASSWORD` | Gmail account (and app password) used to send client invites and new-request notifications. |
 | `R2_ENDPOINT`, `R2_BUCKET`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | Cloudflare R2 credentials used by `helpers/storage.js`. |
@@ -58,10 +58,23 @@ node scripts/migrate-images-to-r2.js --dry-run   # only print what would happen
 node scripts/migrate-images-to-r2.js
 ```
 
+### Hosting on Netlify
+
+The API runs as a single Netlify Function (`netlify/functions/api.mjs`) that serves every path through the Express app.
+
+1. Push the repo to GitHub and import it in Netlify (no build command, publish directory `public`, both set in `netlify.toml`).
+2. Add all variables from the table above (except `PORT`) under *Site configuration → Environment variables*.
+3. In MongoDB Atlas allow connections from anywhere (`0.0.0.0/0`), because Netlify has no fixed IPs.
+4. Deploy and add the custom domain (e.g. `api.photodej.com`).
+
+Limits to keep in mind: a function request/response is capped at 6 MB (base64 uploads effectively ~4.5 MB), so large album photos can't be uploaded or streamed through `/images` on Netlify. The local file system is read-only, so nothing may be written to disk.
+
 ## Project structure
 
 ```
-app.js                 Express setup (session, CORS, JSON, file upload) + DB connection
+app.js                 Express setup (CORS, JSON, file upload) + DB connection; exports the app
+netlify/functions/     Netlify Function that wraps the Express app
+netlify.toml           Netlify configuration
 main-router/           Mounts every route file under its prefix
 routes/                One file per resource: path -> controller (+ verifyToken)
 controllers/           Request handlers
@@ -444,7 +457,7 @@ curl -X POST $API/client \
 **Auth: token.** Update an active client (any field in the body). `200` returns `{ message: "success.clientUpdated", actual_message, client }`. See [Known issues](#known-issues).
 
 ### `PATCH /client/profile_image/change/:id`
-**Auth: token.** Upload a profile image as `multipart/form-data` with the file in the field **`image`**. The file is saved on the server disk (`./images/profile_images/<clientId>_<filename>`), the old one is removed.
+**Auth: token.** Upload a profile image as `multipart/form-data` with the file in the field **`image`**. The file is stored in R2 as `profile_images/<clientId>_<filename>` and the old one is removed.
 
 ```bash
 curl -X PATCH $API/client/profile_image/change/665f2a0b9b1e8a0012a4c222 \

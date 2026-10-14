@@ -7,8 +7,8 @@ const FeConfiguration = require('../db/models/feConfiguration');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
-const fs = require('fs');
 
+const { putObject, deleteObject } = require('../helpers/storage');
 const { statusCodes } = require('../helpers/statusCodes');
 const { errorMessages } = require('../helpers/errorMessages');
 const { successMessages } = require('../helpers/successMessages');
@@ -328,7 +328,8 @@ exports.changeProfileImage = async (req, res) => {
   const token = req.headers.authorization;
   const loggedInUser = parseJwt(token);
 
-  const path = './images/profile_images/';
+  // profile images live in R2 (the serverless file system is read-only)
+  const profileImageKey = (name) => `profile_images/${name}`;
 
   const _id = req.params.id;
   const image = req.files.image;
@@ -346,11 +347,11 @@ exports.changeProfileImage = async (req, res) => {
         const client = clients[0];
 
         if (client.profile_image) {
-          fs.unlinkSync(path + client.profile_image);
+          await deleteObject(profileImageKey(client.profile_image));
         }
 
         const newFileName = client._id + '_' + image.name;
-        image.mv(path + newFileName);
+        await putObject(profileImageKey(newFileName), image.data, image.mimetype);
 
         await Client.updateOne(
           { _id },
