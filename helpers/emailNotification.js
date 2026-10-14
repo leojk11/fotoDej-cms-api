@@ -6,7 +6,7 @@ const subjects = {
   REQUEST: 'Пристигнато е ново барање за контакт!',
 };
 
-generateEmailSettings = async(configuration, template, subject) => {
+const generateEmailSettings = async(configuration, template, subject) => {
   let settings = {
     transporter: null,
     mailOptions: null

@@ -8,6 +8,6 @@
 
 [functions]
   directory = "netlify/functions"
-  node_bundler = "esbuild"
-  # native module, must be installed as-is instead of bundled
-  external_node_modules = ["bcrypt"]
+  # the bundled app require()s its dependencies at runtime, which Netlify's file tracing misses, so ship them all
+  # (includes bcrypt's prebuilt native binaries)
+  included_files = ["node_modules/**", "!node_modules/nodemon/**"]
