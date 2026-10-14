@@ -6,7 +6,7 @@ REST API behind the FotoDej photographer CMS and client portal. Photographers (a
 
 | | |
 |---|---|
-| API URL | https://api.photodej.com |
+| API URL | https://api-photodej.softwareio.click |
 | Postman documentation | https://documenter.getpostman.com/view/14487622/VUjTmPW7 |
 
 ## Table of contents
