@@ -13,13 +13,13 @@ const { generateDate } = require('../helpers/timeDate');
 
 exports.getDashboard = async (req, res) => {
   try {
-    const albums = await Album.find().count();
-    const clients = await Client.find().count();
-    const requests = await Request.find().count();
-    const invites = await Invite.find().count();
+    const albums = await Album.find().countDocuments();
+    const clients = await Client.find().countDocuments();
+    const requests = await Request.find().countDocuments();
+    const invites = await Invite.find().countDocuments();
 
-    const visitCounters = await VisitCounter.find({ date: generateDate() }).count();
-    
+    const visitCounters = await VisitCounter.find({ date: generateDate() }).countDocuments();
+
     await Logger.insertMany(generateSuccessLogger(null, req));
     res.status(statusCodes.success).json({
       albums, clients,

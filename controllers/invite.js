@@ -15,7 +15,7 @@ exports.getAll = (req, res) => {
   // const loggedInUser = parseJwt(token);
 
   let skip = 0;
-  if(parseInt(req.query.page) === 1) {
+  if (parseInt(req.query.page) === 1) {
     skip = 0;
   } else {
     skip = req.query.take
@@ -24,16 +24,16 @@ exports.getAll = (req, res) => {
 
   if (req.query.client) {
     filters.$or = [
-			{ 'invited_client.firstname': { $regex: req.query.client, $options: 'i'} },
-			{ 'invited_client.lastname': { $regex: req.query.client, $options: 'i'} }  
-		];
+      { 'invited_client.firstname': { $regex: req.query.client, $options: 'i' } },
+      { 'invited_client.lastname': { $regex: req.query.client, $options: 'i' } }
+    ];
   }
   if (req.query.date) {
     filters.date = req.query.date;
   }
 
   if (req.query.status) {
-    if(req.query.status !== InviteStatus.SUCCESSFULL && req.query.status !== InviteStatus.FAILED) {
+    if (req.query.status !== InviteStatus.SUCCESSFULL && req.query.status !== InviteStatus.FAILED) {
       res.status(statusCodes.user_error).json({
         message: errorMessages.invalid_invite_status_tr,
         actual_message: errorMessages.invalid_invite_status
@@ -50,11 +50,11 @@ exports.getAll = (req, res) => {
     .limit(parseInt(req.query.take))
     .then(invites => {
       Invite.find(filters)
-        .count()
+        .countDocuments()
         .then(countRes => {
           const invitesToSend = [];
 
-          for(const invite of invites) {
+          for (const invite of invites) {
             invitesToSend.push(generateInvite(invite));
           }
 
@@ -84,10 +84,10 @@ exports.getAll = (req, res) => {
 exports.getSingle = (req, res) => {
   const _id = req.params.id;
 
-  if(_id) {
+  if (_id) {
     Invite.find({ _id })
       .then(invites => {
-        if(invites.length === 0) {
+        if (invites.length === 0) {
           res.status(statusCodes.user_error).json({
             message: errorMessages.invite_not_exist_tr,
             actual_message: errorMessages.not_exist('Invite', _id)
@@ -97,7 +97,7 @@ exports.getSingle = (req, res) => {
         }
       })
       .catch(error => {
-        if(error.kind === ErrorKind.ID) {
+        if (error.kind === ErrorKind.ID) {
           res.status(statusCodes.user_error).json({
             message: errorMessages.invalid_id_tr,
             actual_message: errorMessages.invalid_id(id)

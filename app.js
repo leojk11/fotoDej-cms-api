@@ -1,7 +1,6 @@
 const express = require('express');
 const session = require('express-session');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const fileUpload = require('express-fileupload');
 require('dotenv').config();
 
@@ -11,38 +10,42 @@ const { errorHandler } = require('./middlewares/common');
 const { initConfiguration } = require('./helpers/initializeConfiguration');
 
 const mongo = require('./db/mongo');
-const connectToMongoDb = async() => {
-    await mongo().then(_ => {
-        try {
-            console.log('CONNECTED TO DB!!')
-            const port = process.env.PORT || 5000;
-            app.listen(port, () => {
-                console.log(`APP IS LISTENING TO PORT ${ port }!!`);
-                initConfiguration();
-            });
-        } catch (error) {
-            console.log('CONNECTION TO DB FAILED', error);
-        }
-    });
+const connectToMongoDb = async () => {
+  await mongo().then(_ => {
+    try {
+      console.log('CONNECTED TO DB!!')
+      const port = process.env.PORT || 5000;
+      app.listen(port, () => {
+        console.log(`APP IS LISTENING TO PORT ${port}!!`);
+        initConfiguration();
+      });
+    } catch (error) {
+      console.log('CONNECTION TO DB FAILED', error);
+    }
+  });
 }
 
 const app = express();
 app.use(
-    session({
-        secret: process.env.SECRET,
-        resave: false,
-        saveUninitialized: true
-    }),
-    cors({
-        origin: '*',
-        optionsSuccessStatus: 200
-    }),
-    express.json(),
-    fileUpload(),
-    bodyParser.urlencoded({ extended: false }),
-    bodyParser.json(),
-    mainRouter,
-    errorHandler
+  session({
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: true
+  }),
+  cors({
+    origin: '*',
+    optionsSuccessStatus: 200
+  }),
+  express.json(),
+  fileUpload(),
+  express.urlencoded({ extended: false }),
+  // Express 5 leaves req.body undefined when no body is parsed
+  (req, res, next) => {
+    req.body = req.body || {};
+    next();
+  },
+  mainRouter,
+  errorHandler
 );
 
 // connect app to db and start it 

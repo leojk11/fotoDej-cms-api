@@ -8,7 +8,7 @@ const loggerSchema = new Schema({
   method: {
     type: String
   },
-  
+
   log_type: {
     type: String
   },

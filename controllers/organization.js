@@ -16,7 +16,7 @@ exports.getAll = (req, res) => {
   const loggedInUser = parseJwt(token);
 
   let skip = 0;
-  if(parseInt(req.query.page) === 1) {
+  if (parseInt(req.query.page) === 1) {
     skip = 0;
   } else {
     skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
@@ -32,11 +32,11 @@ exports.getAll = (req, res) => {
     .limit(parseInt(req.query.take))
     .then(organizations => {
       Organization.find(filters)
-        .count()
+        .countDocuments()
         .then(countRes => {
           const organizationsToSend = [];
 
-          for(const org of organizations) {
+          for (const org of organizations) {
             organizationsToSend.push(org);
           }
 
@@ -76,7 +76,7 @@ exports.getSingle = (req, res) => {
         }
       })
       .catch(error => {
-        if(error.kind === ErrorKind.ID) {
+        if (error.kind === ErrorKind.ID) {
           res.status(statusCodes.user_error).json({
             message: errorMessages.invalid_id(id),
             error

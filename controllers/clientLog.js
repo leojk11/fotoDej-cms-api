@@ -12,20 +12,20 @@ const { ErrorKind } = require('../enums/errorKind');
 
 exports.getAll = (req, res) => {
 
-	let skip = 0;
-	if(parseInt(req.query.page) === 1) {
-		skip = 0;
-	} else {
-		skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
-	}
+  let skip = 0;
+  if (parseInt(req.query.page) === 1) {
+    skip = 0;
+  } else {
+    skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
+  }
 
   const filters = {};
 
   if (req.query.client) {
     filters.$or = [
-			{ 'client.firstname': { $regex: req.query.client, $options: 'i'} },
-			{ 'client.lastname': { $regex: req.query.client, $options: 'i'} }  
-		];
+      { 'client.firstname': { $regex: req.query.client, $options: 'i' } },
+      { 'client.lastname': { $regex: req.query.client, $options: 'i' } }
+    ];
   }
 
   if (req.query.date) {
@@ -33,10 +33,10 @@ exports.getAll = (req, res) => {
   }
 
   if (req.query.action) {
-    if(req.query.action !== ClientLogAction.ACTIVATE_ACCOUNT 
-      && req.query.action !== ClientLogAction.LOGIN 
-      && req.query.action !== ClientLogAction.LOGOUT 
-      && req.query.action !== ClientLogAction.SELECTED_IMAGES 
+    if (req.query.action !== ClientLogAction.ACTIVATE_ACCOUNT
+      && req.query.action !== ClientLogAction.LOGIN
+      && req.query.action !== ClientLogAction.LOGOUT
+      && req.query.action !== ClientLogAction.SELECTED_IMAGES
       && req.query.action !== ClientLogAction.UPDATED_PROFILE) {
       res.status(statusCodes.user_error).json({
         message: errorMessages.invalid_log_action_tr,
@@ -54,7 +54,7 @@ exports.getAll = (req, res) => {
     .limit(parseInt(req.query.take))
     .then(clientLogs => {
       ClientLog.find(filters)
-        .count()
+        .countDocuments()
         .then(countRes => {
           const logsToSend = [];
 
@@ -100,11 +100,11 @@ exports.getForClient = (req, res) => {
           ClientLog.find({ client_id: clientId })
             .then(clientLogs => {
               const logsToSend = [];
-      
+
               for (const log of clientLogs) {
                 logsToSend.push(generateClientLog(log));
               }
-      
+
               res.status(statusCodes.success).send(logsToSend);
             })
             .catch(error => {
@@ -117,7 +117,7 @@ exports.getForClient = (req, res) => {
         }
       })
       .catch(error => {
-        if(error.kind === ErrorKind.ID) {
+        if (error.kind === ErrorKind.ID) {
           res.status(statusCodes.user_error).json({
             message: errorMessages.invalid_id_tr,
             actual_message: errorMessages.invalid_id(id)
@@ -155,11 +155,11 @@ exports.getRecentForClient = (req, res) => {
             .limit(5)
             .then(clientLogs => {
               const logsToSend = [];
-      
+
               for (const log of clientLogs) {
                 logsToSend.push(generateClientLog(log));
               }
-      
+
               res.status(statusCodes.success).send(logsToSend);
             })
             .catch(error => {
@@ -172,7 +172,7 @@ exports.getRecentForClient = (req, res) => {
         }
       })
       .catch(error => {
-        if(error.kind === ErrorKind.ID) {
+        if (error.kind === ErrorKind.ID) {
           res.status(statusCodes.user_error).json({
             message: errorMessages.invalid_id_tr,
             actual_message: errorMessages.invalid_id(id)

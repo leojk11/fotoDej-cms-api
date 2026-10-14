@@ -14,7 +14,7 @@ const clientLogSchema = new Schema({
     type: Object,
     required: true
   },
-  
+
   date: {
     type: String,
     required: true

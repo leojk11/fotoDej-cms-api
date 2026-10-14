@@ -15,13 +15,13 @@ exports.getAll = (req, res) => {
   const loggedInUser = parseJwt(token);
 
   let skip = 0;
-  if(parseInt(req.query.page) === 1) {
+  if (parseInt(req.query.page) === 1) {
     skip = 0;
   } else {
     skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
   }
 
-  const filters = { };
+  const filters = {};
 
   Logger.find(filters)
     .sort({ _id: 'desc' })
@@ -29,11 +29,11 @@ exports.getAll = (req, res) => {
     .limit(parseInt(req.query.take))
     .then(logs => {
       Logger.find(filters)
-        .count()
+        .countDocuments()
         .then(countRes => {
           const logsToSend = [];
 
-          for(const admin of logs) {
+          for (const admin of logs) {
             logsToSend.push(admin);
           }
 

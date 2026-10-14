@@ -7,10 +7,10 @@ const { errorMessages } = require('../helpers/errorMessages');
 const { generateVistiCounter } = require('../helpers/generateModels');
 const { generateDate } = require('../helpers/timeDate');
 
-exports.getAll = async(req, res) => {
+exports.getAll = async (req, res) => {
 
   let skip = 0;
-  if(parseInt(req.query.page) === 1) {
+  if (parseInt(req.query.page) === 1) {
     skip = 0;
   } else {
     skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
@@ -21,7 +21,7 @@ exports.getAll = async(req, res) => {
   try {
     const visitCounters = await VisitCounter.find(filters).sort({ _id: 'desc' })
       .skip(skip).limit(parseInt(req.query.take));
-    const visitCountersCount = await VisitCounter.find().count();
+    const visitCountersCount = await VisitCounter.find().countDocuments();
 
     await Logger.insertMany(generateSuccessLogger(null, req));
 
@@ -41,7 +41,7 @@ exports.getAll = async(req, res) => {
   }
 }
 
-exports.addCounter = async(req, res) => {
+exports.addCounter = async (req, res) => {
   await VisitCounter.insertMany({ date: generateDate() });
   res.status(200).send('ok');
 }

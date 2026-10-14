@@ -8,7 +8,7 @@ const inviteSchema = new Schema({
   invited_client_id: {
     type: String
   },
-  
+
   status: {
     type: String
   },

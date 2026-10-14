@@ -11,7 +11,7 @@ const { successMessages } = require('../helpers/successMessages');
 exports.getAll = (req, res) => {
 
   let skip = 0;
-  if(parseInt(req.query.page) === 1) {
+  if (parseInt(req.query.page) === 1) {
     skip = 0;
   } else {
     skip = (parseInt(req.query.take) * parseInt(req.query.page)) - parseInt(req.query.take);
@@ -25,12 +25,12 @@ exports.getAll = (req, res) => {
     .limit(parseInt(req.query.take))
     .then(notifications => {
       Notification.find(filters)
-        .count()
+        .countDocuments()
         .then(countRes => {
           const notificataionsToSend = [];
           let notReadNotifications = 0;
 
-          for(const notification of notifications) {
+          for (const notification of notifications) {
             const addedTime = new Date(notification.timestamp);
             const now = new Date();
 
@@ -101,7 +101,7 @@ exports.markAsRead = (req, res) => {
             });
           })
           .catch(error => {
-            if(error.kind === ErrorKind.ID) {
+            if (error.kind === ErrorKind.ID) {
               res.status(statusCodes.user_error).json({
                 message: errorMessages.invalid_id_tr,
                 actual_message: errorMessages.invalid_id(id)
@@ -116,7 +116,7 @@ exports.markAsRead = (req, res) => {
           })
       })
       .catch(error => {
-        if(error.kind === ErrorKind.ID) {
+        if (error.kind === ErrorKind.ID) {
           res.status(statusCodes.user_error).json({
             message: errorMessages.invalid_id_tr,
             actual_message: errorMessages.invalid_id(id)

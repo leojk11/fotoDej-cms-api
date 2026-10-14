@@ -17,19 +17,19 @@ const { requestNotification } = require('../helpers/emailNotification');
 
 const { parseJwt } = require('../middlewares/common');
 
-exports.getAll = async(req, res) => {
+exports.getAll = async (req, res) => {
 
   const token = req.headers.authorization;
-	const loggedInUser = parseJwt(token);
+  const loggedInUser = parseJwt(token);
 
   let skip = 0;
-  if(parseInt(req.query.page) === 1) {
+  if (parseInt(req.query.page) === 1) {
     skip = 0;
   } else {
     skip = req.query.take;
   }
 
-  const filters = { };
+  const filters = {};
 
   if (req.query.firstname) {
     filters.firstname = { $regex: req.query.firstname, $options: 'i' };
@@ -47,7 +47,7 @@ exports.getAll = async(req, res) => {
     filters.date = { $regex: req.query.date, $options: 'i' };
   }
   if (req.query.status) {
-    if(req.query.status !== RequestStatus.PENDING && req.query.status !== RequestStatus.CONTACTED) {
+    if (req.query.status !== RequestStatus.PENDING && req.query.status !== RequestStatus.CONTACTED) {
       await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_request_status));
       res.status(statusCodes.user_error).json({
         message: errorMessages.invalid_request_status_tr,
@@ -62,7 +62,7 @@ exports.getAll = async(req, res) => {
   try {
     const requests = await Request.find(filters).sort({ _id: 'desc' })
       .skip(skip).limit(parseInt(req.query.take));
-    const requestsCount = await Request.find(filters).count();
+    const requestsCount = await Request.find(filters).countDocuments();
 
     await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
     res.status(statusCodes.success).json({
@@ -80,12 +80,12 @@ exports.getAll = async(req, res) => {
   }
 }
 
-exports.getPending = async(req, res) => {
+exports.getPending = async (req, res) => {
   const token = req.headers.authorization;
-	const loggedInUser = parseJwt(token);
+  const loggedInUser = parseJwt(token);
 
   let skip = 0;
-  if(parseInt(req.query.page) === 1) {
+  if (parseInt(req.query.page) === 1) {
     skip = 0;
   } else {
     skip = req.query.take;
@@ -94,7 +94,7 @@ exports.getPending = async(req, res) => {
   try {
     const requests = await Request.find({ status: RequestStatus.PENDING }).sort({ _id: 'desc' })
       .skip(skip).limit(parseInt(req.query.take));
-    const requestsCount = await Request.find({ status: RequestStatus.PENDING }).count();
+    const requestsCount = await Request.find({ status: RequestStatus.PENDING }).countDocuments();
 
     await Logger.insertMany(generateSuccessLogger(loggedInUser, req));
     res.status(statusCodes.success).json({
@@ -112,9 +112,9 @@ exports.getPending = async(req, res) => {
   }
 }
 
-exports.getSingle = async(req, res) => {
+exports.getSingle = async (req, res) => {
   const token = req.headers.authorization;
-	const loggedInUser = parseJwt(token);
+  const loggedInUser = parseJwt(token);
 
   const _id = req.params.id;
 
@@ -132,7 +132,7 @@ exports.getSingle = async(req, res) => {
         res.status(statusCodes.success).send(generateRequest(requests[0]));
       }
     } catch (error) {
-      if(error.kind === ErrorKind.ID) {
+      if (error.kind === ErrorKind.ID) {
         await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(id)));
         res.status(statusCodes.user_error).json({
           message: errorMessages.invalid_id_tr,
@@ -156,11 +156,11 @@ exports.getSingle = async(req, res) => {
   }
 }
 
-exports.addNew = async(req, res) => {
+exports.addNew = async (req, res) => {
   const token = req.headers.authorization;
-	const loggedInUser = parseJwt(token);
+  const loggedInUser = parseJwt(token);
 
-  const data = { 
+  const data = {
     ...req.body,
 
     status: RequestStatus.PENDING,
@@ -206,9 +206,9 @@ exports.addNew = async(req, res) => {
   }
 }
 
-exports.markAsContacted = async(req, res) => {
+exports.markAsContacted = async (req, res) => {
   const token = req.headers.authorization;
-	const loggedInUser = parseJwt(token);
+  const loggedInUser = parseJwt(token);
 
   const _id = req.params.id;
 
@@ -233,7 +233,7 @@ exports.markAsContacted = async(req, res) => {
         });
       }
     } catch (error) {
-      if(error.kind === ErrorKind.ID) {
+      if (error.kind === ErrorKind.ID) {
         await Logger.insertMany(generateErrorLogger(loggedInUser, req, errorMessages.invalid_id(id)));
         res.status(statusCodes.user_error).json({
           message: errorMessages.invalid_id_tr,
